@@ -14,4 +14,5 @@ data class Contenedor(
     val lote: Int,
     val distrito: String,
     val direction: String
+
 )

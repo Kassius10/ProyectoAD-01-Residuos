@@ -1,4 +1,5 @@
 import controller.ContenedorController
+import controller.ResiduoController
 import kotlin.system.exitProcess
 
 /**
@@ -9,6 +10,7 @@ import kotlin.system.exitProcess
  */
 fun main(args: Array<String>) {
 //    init(args)
+    ResiduoController.procesarData()
     ContenedorController.procesarData()
 }
 
