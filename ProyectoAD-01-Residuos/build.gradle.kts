@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.6.20"
-    id("org.jetbrains.kotlinx.dataframe") version "0.8.1"
+//    id("org.jetbrains.kotlinx.dataframe") version "0.8.1"
 }
 
 group = "org.example"

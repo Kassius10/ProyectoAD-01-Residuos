@@ -1,5 +1,4 @@
-import controller.ContenedorController
-import controller.ResiduoController
+import controller.Resumen
 import kotlin.system.exitProcess
 
 /**
@@ -9,9 +8,10 @@ import kotlin.system.exitProcess
  * @param args Argumentos necesarios que se pasaran por consola.
  */
 fun main(args: Array<String>) {
-//    init(args)
-    ResiduoController.procesarData()
-    ContenedorController.procesarData()
+    init(args)
+    Resumen.procesarData(args[1], args[2])
+
+//    ContenedorController.procesarData()
 }
 
 /**
@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
  */
 fun init(args: Array<String>) {
     if (args.isNotEmpty()) {
-        if (args[0].equals("parser")) println("Esto es el parser")
+        if (args[0].equals("parser"))
         else if (args[0].equals("resumen")) println("Esto es el resume")
         else {
             println("Parámetros incorrectos")

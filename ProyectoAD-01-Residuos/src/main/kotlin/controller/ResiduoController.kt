@@ -1,23 +1,34 @@
 package controller
 
-import models.Residuo
-import mu.KotlinLogging
-import org.jetbrains.kotlinx.dataframe.api.schema
-import org.jetbrains.kotlinx.dataframe.api.toDataFrame
-import storage.ResiduosStorageCsv
+import dto.ResiduoDTO
 import java.io.File
 
+/**
+ * Clase encargada del control de ficheros de residuos.
+ */
 object ResiduoController {
-    private val logger = KotlinLogging.logger {}
-
-    fun procesarData() {
-        logger.info("Procesando los datos...")
-        var file = System.getProperty("user.dir") + File.separator + ("src") +
-                File.separator + ("main") +
-                File.separator + ("resources") + File.separator + ("modelo_residuos_2021.csv")
-
-        val residuos: List<Residuo> = ResiduosStorageCsv.loadDataFromCsv(File(file))
-        val dataFrame = residuos.toDataFrame()
-        println(dataFrame.schema())
+    /**
+     * Función para procesar los datos del csv y limpiar datos.
+     * @param file Fichero que contiene el csv a limpiar.
+     * @return Devuelve una lista de residuos.
+     */
+    fun loadDataFromCsv(file: File): List<ResiduoDTO> {
+        val residuos: List<ResiduoDTO> = file.readLines()
+            .drop(1)
+            .map { it.split(";") }
+            .map {
+                it.map { campo -> campo.trim() }
+                ResiduoDTO(
+                    it[0].toInt(),
+                    it[1],
+                    it[2].toInt(),
+                    it[3],
+                    it[4].toInt(),
+                    it[5],
+                    it[6].replace(",", ".").toDouble()
+                )
+            }
+        return residuos
     }
+
 }

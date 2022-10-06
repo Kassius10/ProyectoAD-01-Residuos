@@ -1,4 +1,4 @@
-package storage
+package mappers
 
 import models.Contenedor
 import models.TipoContenedor
