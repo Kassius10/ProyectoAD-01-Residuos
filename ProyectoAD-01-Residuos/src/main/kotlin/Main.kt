@@ -1,4 +1,7 @@
 import controller.Resumen
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 /**
@@ -9,9 +12,20 @@ import kotlin.system.exitProcess
  */
 fun main(args: Array<String>) {
     init(args)
-    Resumen.procesarData(args[1], args[2])
 
-//    ContenedorController.procesarData()
+//    for (key in prueba) {
+//        println(key)
+////        println(prueba[])
+//    }
+
+    /*try {
+        var prueba = Json.decodeFromString<List<ResiduoDTO>>(file.readText())
+        prueba.forEach { println(it) }
+    } catch (e: Exception) {
+        println("El fichero Json no es correcto")
+    }*/
+
+
 }
 
 /**
@@ -21,15 +35,29 @@ fun main(args: Array<String>) {
  */
 fun init(args: Array<String>) {
     if (args.isNotEmpty()) {
-        if (args[0].equals("parser"))
-        else if (args[0].equals("resumen")) println("Esto es el resume")
-        else {
+
+        if (args[0].equals("parser")) {
+            var ficheros = findCSV(args)
+            println(ficheros)
+            Resumen.parser(ficheros)
+
+        } else if (args[0].equals("resumen")) {
+            println("Esto es el resume")
+        } else {
             println("Parámetros incorrectos")
             exitProcess(0)
         }
 
     } else {
         println("Opción incorrecta.")
-        exitProcess(0)
+//        exitProcess(0)
+//        Resumen.parser()
     }
+}
+
+fun findCSV(args: Array<String>): List<File>? {
+    val directorio = args.takeLast(2)[0]
+    if (Files.isDirectory(Paths.get(directorio))) {
+        return File(directorio).listFiles()?.filter { it.absolutePath.contains(".json") }
+    } else return throw IllegalStateException("No existe el directorio: $directorio")
 }

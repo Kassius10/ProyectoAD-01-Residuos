@@ -1,6 +1,10 @@
 package controller
 
 import dto.ResiduoDTO
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import nl.adaptivity.xmlutil.serialization.XML
 import java.io.File
 
 /**
@@ -29,6 +33,26 @@ object ResiduoController {
                 )
             }
         return residuos
+    }
+
+    fun writeJson(file: File, residuos: List<ResiduoDTO>) {
+        var fileJson = file.absolutePath.replace(".csv", ".json")
+        println("Ruta del nuevo fichero: $fileJson")
+        val json = Json { prettyPrint = true }
+        File(fileJson).writeText(json.encodeToString(residuos))
+        println("Fichero creado")
+    }
+
+    fun readJson(file: File): List<ResiduoDTO> {
+        return Json.decodeFromString(file.readText())
+    }
+
+    fun readXml(file: File): List<ResiduoDTO> {
+        return XML.decodeFromString(file.readText())
+    }
+
+    fun writeXml(file: File) {
+
     }
 
 }
