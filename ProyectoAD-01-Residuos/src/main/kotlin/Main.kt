@@ -40,8 +40,7 @@ fun init(args: Array<String>) {
 
     } else {
         println("Opción incorrecta.")
-//        exitProcess(0)
-//        Resumen.parser()
+        exitProcess(0)
     }
 }
 

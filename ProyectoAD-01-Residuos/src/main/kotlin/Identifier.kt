@@ -1,5 +1,4 @@
 import controller.ResiduoController
-import dto.ResiduoDTO
 import mu.KotlinLogging
 import java.io.File
 
@@ -10,16 +9,16 @@ object Identifier {
         "Código Interno del Situad;Tipo Contenedor;Modelo;Descripcion Modelo;Cantidad;Lote;Distrito;Barrio;Tipo Vía;Nombre;Número;COORDENADA X;COORDENADA Y;LONGITUD;LATITUD;DIRECCION"
 
 
-    fun isCSV(file: File): List<ResiduoDTO> {
+    fun isCSV(file: File): String {
         val residuos: String = file.readLines()[0].substring(1)
         when {
-            residuos.equals(headResiduo) -> return ResiduoController.loadDataFromCsv(file)
-            residuos.equals(headContenedor) -> return ResiduoController.loadDataFromCsv(file)
+            residuos.equals(headResiduo) -> return "residuos"
+            residuos.equals(headContenedor) -> return "contenedor"
             else -> throw IllegalArgumentException("El csv es incorrecto.")
         }
     }
 
-    fun isJSON(file: File): List<ResiduoDTO> {
+    fun isJSON(file: File): List<Any> {
         val residuos: String = getHeadJson(file)
         when {
             residuos.equals(headResiduo) -> return ResiduoController.readJson(file)
@@ -28,7 +27,7 @@ object Identifier {
         }
     }
 
-    fun isXML(file: File): List<ResiduoDTO> {
+    fun isXML(file: File): List<Any> {
         val residuos: String = getHeadXml(file)
         when {
             residuos.equals(headResiduo) -> return ResiduoController.readXml(file)
