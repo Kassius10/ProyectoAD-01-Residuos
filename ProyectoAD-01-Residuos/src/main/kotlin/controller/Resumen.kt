@@ -26,11 +26,13 @@ object Resumen {
     fun parser(files: List<File>?) {
         files?.forEach {
             println("Repasamos los ficheros")
-//            var lista = Identifier.isCSV(it)
-//            ResiduoController.writeJson(it, lista)
-            var lista = Identifier.isJSON(it)
-            lista.forEach { println(it) }
-
+            try {
+                var lista = Identifier.isCSV(it)
+                ResiduoController.writeJson(it, lista)
+                ResiduoController.writeXml(it, lista)
+            } catch (e: Exception) {
+                println(e.message)
+            }
         }
     }
 

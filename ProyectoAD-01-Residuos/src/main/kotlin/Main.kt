@@ -13,19 +13,6 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     init(args)
 
-//    for (key in prueba) {
-//        println(key)
-////        println(prueba[])
-//    }
-
-    /*try {
-        var prueba = Json.decodeFromString<List<ResiduoDTO>>(file.readText())
-        prueba.forEach { println(it) }
-    } catch (e: Exception) {
-        println("El fichero Json no es correcto")
-    }*/
-
-
 }
 
 /**
@@ -37,9 +24,12 @@ fun init(args: Array<String>) {
     if (args.isNotEmpty()) {
 
         if (args[0].equals("parser")) {
-            var ficheros = findCSV(args)
-            println(ficheros)
-            Resumen.parser(ficheros)
+            try {
+                var ficheros = findCSV(args)
+                Resumen.parser(ficheros)
+            } catch (e: Exception) {
+                println("El directorio no contiene archivos csv.")
+            }
 
         } else if (args[0].equals("resumen")) {
             println("Esto es el resume")
@@ -58,6 +48,6 @@ fun init(args: Array<String>) {
 fun findCSV(args: Array<String>): List<File>? {
     val directorio = args.takeLast(2)[0]
     if (Files.isDirectory(Paths.get(directorio))) {
-        return File(directorio).listFiles()?.filter { it.absolutePath.contains(".json") }
+        return File(directorio).listFiles()?.filter { it.absolutePath.contains(".csv") }
     } else return throw IllegalStateException("No existe el directorio: $directorio")
 }

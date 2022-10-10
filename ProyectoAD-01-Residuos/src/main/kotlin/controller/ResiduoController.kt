@@ -51,8 +51,11 @@ object ResiduoController {
         return XML.decodeFromString(file.readText())
     }
 
-    fun writeXml(file: File) {
-
+    fun writeXml(file: File, residuos: List<ResiduoDTO>) {
+        var fileXml = file.absolutePath.replace(".csv", ".xml")
+        println("Ruta del nuevo fichero: $fileXml")
+        val xml = XML { indent = 4 }
+        File(fileXml).writeText(xml.encodeToString(residuos))
     }
 
 }
