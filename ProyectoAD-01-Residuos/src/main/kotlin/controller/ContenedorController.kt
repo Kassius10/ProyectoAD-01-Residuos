@@ -1,22 +1,11 @@
 package controller
 
-import jetbrains.datalore.plot.builder.presentation.Defaults
-import jetbrains.letsPlot.*
-import jetbrains.letsPlot.export.ggsave
-import jetbrains.letsPlot.geom.geomBar
-import jetbrains.letsPlot.geom.geomTile
-import jetbrains.letsPlot.geom.geomVLine
-import jetbrains.letsPlot.intern.Plot
-import jetbrains.letsPlot.label.ggtitle
-import jetbrains.letsPlot.label.labs
-import jetbrains.letsPlot.scale.scaleFillGradient
-import jetbrains.letsPlot.scale.scaleFillManual
+import mappers.ContenedorStorageCsv
 import models.Contenedor
 import models.*
 import mu.KotlinLogging
-import org.jetbrains.kotlinx.dataframe.api.*
-import storage.ContenedorStorageCsv
-import storage.ResiduosStorageCsv
+import org.jetbrains.kotlinx.dataframe.api.schema
+import org.jetbrains.kotlinx.dataframe.api.toDataFrame
 import java.io.File
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -26,24 +15,9 @@ object ContenedorController {
 
     fun procesarData() {
         logger.info("Procesando los datos...")
-        var file = System.getProperty("user.dir") + File.separator + ("src") +
+        var file = "C:\\Users\\danii\\Desktop\\ProyectoAd\\ProyectoAD-01-Residuos" + File.separator + ("src") +
                 File.separator + ("main") +
                 File.separator + ("resources") + File.separator + ("contenedores_varios.csv")
-
-
-
-        //TODO quitar esto de aquí
-        var file2 = System.getProperty("user.dir") + File.separator + ("src") +
-                File.separator + ("main") +
-                File.separator + ("resources") + File.separator + ("modelo_residuos_2021.csv")
-
-
-
-
-        val residuos: List<Residuo> = ResiduosStorageCsv.loadDataFromCsv(File(file2))
-        val dataFrame2 = residuos.toDataFrame()
-
-
 
 
         val contenedores: List<Contenedor> = ContenedorStorageCsv.loadDataFromCsv(File(file))
