@@ -8,7 +8,7 @@ import nl.adaptivity.xmlutil.serialization.XmlElement
  * Data class de ResiduosDto
  */
 @Serializable
-@SerialName("Residuo")
+@SerialName("Residuos")
 data class ResiduoDTO(
     @SerialName("Año")
     @XmlElement(true)
