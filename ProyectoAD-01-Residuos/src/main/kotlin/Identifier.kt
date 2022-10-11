@@ -1,42 +1,75 @@
+import controller.ContenedorController
 import controller.ResiduoController
-import dto.ResiduoDTO
-import mu.KotlinLogging
+import controller.Resumen
 import java.io.File
 
 object Identifier {
-    private val logger = KotlinLogging.logger {}
     private val headResiduo = "Año;Mes;Lote;Residuo;Distrito;Nombre Distrito;Toneladas"
     private val headContenedor =
         "Código Interno del Situad;Tipo Contenedor;Modelo;Descripcion Modelo;Cantidad;Lote;Distrito;Barrio;Tipo Vía;Nombre;Número;COORDENADA X;COORDENADA Y;LONGITUD;LATITUD;DIRECCION"
 
-
-    fun isCSV(file: File): List<ResiduoDTO> {
-        val residuos: String = file.readLines()[0].substring(1)
+    /**
+     * Método para comprobar a que clase pertenece el archivo csv
+     * @param file Fichero csv donde se encuentran los datos a procesar.
+     */
+    fun isCSV(file: File) {
+        val head: String = file.readLines()[0]
         when {
-            residuos.equals(headResiduo) -> return ResiduoController.loadDataFromCsv(file)
-            residuos.equals(headContenedor) -> return ResiduoController.loadDataFromCsv(file)
-            else -> throw IllegalArgumentException("El csv es incorrecto.")
+            head.equals(headResiduo) -> {
+                var list = ResiduoController.loadDataFromCsv(file)
+                Resumen.residuos = list
+            }
+            head.equals(headContenedor) -> {
+                var list = ContenedorController.loadDataFromCsv(file)
+                Resumen.contenedores = list
+            }
+            else -> throw IllegalArgumentException("El csv es incorrecto: $head")
         }
     }
 
-    fun isJSON(file: File): List<ResiduoDTO> {
-        val residuos: String = getHeadJson(file)
+    /**
+     * Método para comprobar a que clase pertenece el archivo json
+     * @param file Fichero json donde se encuentran los datos a procesar.
+     */
+    fun isJSON(file: File) {
+        val head: String = getHeadJson(file)
         when {
-            residuos.equals(headResiduo) -> return ResiduoController.readJson(file)
-            residuos.equals(headContenedor) -> return ResiduoController.readJson(file)
-            else -> throw IllegalArgumentException("El Json es incorrecto.")
+            head.equals(headResiduo) -> {
+                var list = ResiduoController.loadDataFromJson(file)
+                Resumen.residuos = list
+            }
+            head.equals(headContenedor) -> {
+                var list = ContenedorController.loadDataFromJson(file)
+                Resumen.contenedores = list
+            }
+            else -> throw IllegalArgumentException("El json es incorrecto.")
         }
     }
 
-    fun isXML(file: File): List<ResiduoDTO> {
-        val residuos: String = getHeadXml(file)
+    /**
+     * Método para comprobar a que clase pertenece el archivo xml
+     * @param file Fichero xml donde se encuentran los datos a procesar.
+     */
+    fun isXML(file: File) {
+        val head: String = getHeadXml(file)
         when {
-            residuos.equals(headResiduo) -> return ResiduoController.readXml(file)
-            residuos.equals(headContenedor) -> return ResiduoController.readXml(file)
-            else -> throw IllegalArgumentException("El XML es incorrecto.")
+            head.equals(headResiduo) -> {
+                var list = ResiduoController.loadDataFromXml(file)
+                Resumen.residuos = list
+            }
+            head.equals(headContenedor) -> {
+                var list = ContenedorController.loadDataFromXml(file)
+                Resumen.contenedores = list
+            }
+            else -> throw IllegalArgumentException("El xml es incorrecto.")
         }
     }
 
+    /**
+     * Método para obtener la cabecera del fichero json
+     * @param file Fichero a procesar.
+     * @return Devuelve una cadena ya procesada del fichero.
+     */
     private fun getHeadJson(file: File): String {
         var prueba: MutableList<String> = file.readLines().toMutableList()
 
@@ -53,17 +86,36 @@ object Identifier {
         return prueba.joinToString(";").replace("\"", "").replace(":", "").replace("_", " ")
     }
 
+    /**
+     * Método para obtener la cabecera del fichero xml
+     * @param file Fichero a procesar.
+     * @return Devuelve una cadena ya procesada del fichero.
+     */
     private fun getHeadXml(file: File): String {
-        var prueba: MutableList<String> = file.readLines().drop(2).toMutableList()
+        var prueba: MutableList<String> = file.readLines().toMutableList()
 
         for (i in prueba.indices) {
             prueba[i] = prueba[i].trim()
             prueba[i] = prueba[i].replaceAfter(">", "")
         }
-        prueba = prueba.distinct().toMutableList()
+        prueba = prueba.distinct().drop(2).toMutableList()
         prueba.removeIf { it.contains("/") }
 
         return prueba.joinToString(";").replace("<", "").replace(">", "").replace("_", " ")
 
+    }
+
+    /**
+     * Método para indicar el tipo de clase que utiliza el fichero csv.
+     * @param file Fichero que contiene los datos a procesar.
+     * @return Devuelve una cadena indicando el tipo o una exception si no pertenece a ninguna de las dos.
+     */
+    fun getType(file: File): String {
+        val head: String = file.readLines()[0]
+        when {
+            head.equals(headResiduo) -> return "residuo"
+            head.equals(headContenedor) -> return "contenedor"
+            else -> return throw IllegalArgumentException("El csv es incorrecto: $head")
+        }
     }
 }

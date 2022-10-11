@@ -12,9 +12,9 @@ import java.io.File
  */
 object ResiduoController {
     /**
-     * Función para procesar los datos del csv y limpiar datos.
-     * @param file Fichero que contiene el csv a limpiar.
-     * @return Devuelve una lista de residuos.
+     * Función para procesar los datos de un csv.
+     * @param file Fichero que contiene el csv a procesar.
+     * @return Devuelve una lista de residuosDto.
      */
     fun loadDataFromCsv(file: File): List<ResiduoDTO> {
         val residuos: List<ResiduoDTO> = file.readLines()
@@ -35,24 +35,48 @@ object ResiduoController {
         return residuos
     }
 
-    fun writeJson(file: File, residuos: List<ResiduoDTO>) {
-        var fileJson = file.absolutePath.replace(".csv", ".json")
+    /**
+     * Función para procesar los datos de un json.
+     * @param file Fichero que contiene el json a procesar.
+     * @return Devuelve una lista de ResiduosDto.
+     */
+    fun loadDataFromJson(file: File): List<ResiduoDTO> {
+        return Json.decodeFromString(file.readText())
+    }
+
+    /**
+     * Función para procesar los datos de un xml.
+     * @param file Fichero que contiene el xml a procesar.
+     * @return Devuelve una lista de ResiduosDto.
+     */
+    fun loadDataFromXml(file: File): List<ResiduoDTO> {
+        return XML.decodeFromString(file.readText())
+    }
+
+    /**
+     * Función para almacenar los datos de contenedores en un fichero json.
+     * @param file Fichero necesario para indicar como almacenar los datos.
+     * @param residuos Lista de residuos.
+     * @param directorioDestino Directorio donde se va a almacenar.
+     */
+    fun saveDataFromJson(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
+        var fileName = file.name.replace(".csv", ".json")
+        val fileJson = directorioDestino.absolutePath + File.separator + fileName
         println("Ruta del nuevo fichero: $fileJson")
         val json = Json { prettyPrint = true }
         File(fileJson).writeText(json.encodeToString(residuos))
         println("Fichero creado")
     }
 
-    fun readJson(file: File): List<ResiduoDTO> {
-        return Json.decodeFromString(file.readText())
-    }
-
-    fun readXml(file: File): List<ResiduoDTO> {
-        return XML.decodeFromString(file.readText())
-    }
-
-    fun writeXml(file: File, residuos: List<ResiduoDTO>) {
-        var fileXml = file.absolutePath.replace(".csv", ".xml")
+    /**
+     * Función para almacenar los datos de contenedores en un fichero xml.
+     * @param file Fichero necesario para indicar como almacenar los datos.
+     * @param residuos Lista de contenedores.
+     * @param directorioDestino Directorio donde se va a almacenar.
+     */
+    fun saveDataFromXml(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
+        var fileName = file.name.replace(".csv", ".xml")
+        val fileXml = directorioDestino.absolutePath + File.separator + fileName
         println("Ruta del nuevo fichero: $fileXml")
         val xml = XML { indent = 4 }
         File(fileXml).writeText(xml.encodeToString(residuos))
