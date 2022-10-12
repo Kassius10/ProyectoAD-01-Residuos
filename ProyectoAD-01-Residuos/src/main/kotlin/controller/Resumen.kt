@@ -13,6 +13,7 @@ import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
 import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
+import org.jetbrains.kotlinx.dataframe.io.DisplayConfiguration
 import java.io.File
 
 object Resumen {
@@ -55,6 +56,7 @@ object Resumen {
      */
     fun resumen() {
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
+            DisplayConfiguration.DEFAULT.rowsLimit = 5
             val dataFrame2 = residuos.toDataFrame()
 
             val dataFrame = contenedores.toDataFrame()
@@ -64,7 +66,7 @@ object Resumen {
             val numeroContenedores = dataFrame.groupBy("distrito", "tipoContenedor")
                 .aggregate { count() into "Numero" }.sortByDesc("distrito").drop(1)
             println(" \n Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.")
-            println(numeroContenedores)
+            numeroContenedores.print()
 
             //Consultar la Media de contenedores de cada tipo que hay en cada Distrito.
 
@@ -138,35 +140,87 @@ object Resumen {
 
     fun resumenDistrito(distrito: String) {
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
-            val dataFrameResiduos = residuos.toDataFrame()
+            val dataFrameResiduos = residuos.toDataFrame().update { it["distrito"] }.with { it.toString().uppercase() }
             dataFrameResiduos.cast<ResiduoDTO>()
             val dataFrameContenedor = contenedores.toDataFrame()
+            dataFrameContenedor.cast<ContenedorDTO>()
 
-            println(dataFrameResiduos.schema())
-//            println(dataFrameResiduos.head(2))
-//            println("Numero de filas: ${dataFrameResiduos.rowsCount()}")
-//            dataFrameResiduos.select("distrito").print(10)
 
-//            var existe = dataFrameResiduos
-//                .groupBy("distrito")
-//                .aggregate {
-//                    count() into "total"
-//                }
-//                .filter { "distrito" == distrito }
-//            println("Existe: ")
-//            println(existe)
+            val existeResiduo = dataFrameResiduos.filter { it["distrito"] == distrito }
+            val existeContenedor = dataFrameContenedor.filter { it["distrito"] == distrito }
 
-            val distrit by column<String>("Centro")
+            if (existeResiduo.rowsCount() > 0 && existeContenedor.rowsCount() > 0) {
 
-            var existe = dataFrameResiduos
-                .filterBy("distrito").equals("Centro")
+                val tipoContenedoresDistrito = existeContenedor.groupBy("tipoContenedor", "distrito")
+                    .aggregate {
+                        count() into "Total"
+                    }
+                println("Número de contenedores de cada tipo que hay en: $distrito")
+                tipoContenedoresDistrito.print()
 
-            println(existe)
+                val totalToneladasPorResiduoDistrito = existeResiduo.groupBy("tipoResiduo", "distrito")
+                    .aggregate { sum("toneladas").toFloat() into "Total" }
+                println("Total de toneladas recogidas por residuo en: $distrito")
+                totalToneladasPorResiduoDistrito.print()
 
-//            val numeroContenedores = dataFrameContenedor.groupBy("distrito", "tipoContenedor")
-//                .aggregate { count() into "Numero" }.sortByDesc("distrito").drop(1)
-//            println(" \n Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.")
-//            println(numeroContenedores)
+                var fig: Plot = ggplot(totalToneladasPorResiduoDistrito.toMap()) +
+                        geomTile { x = "distrito"; y = "tipoResiduo"; fill = "Total" } +
+                        theme(panelBackground = elementBlank(), panelGrid = elementBlank()) +
+                        scaleFillGradient("#d2b4de", "#5b2c6f") +
+                        ggsize(700, 400) +
+                        labs(
+                            x = "Distrito",
+                            y = "Tipo de Residuo",
+                            title = "Total de toneladas por Residuos en $distrito"
+                        )
+                ggsave(fig, "totalToneladasPorResiduos$distrito.png")
+
+
+                val estadisticaPorMesResiduoDistrito = existeResiduo.groupBy("month", "distrito")
+                    .aggregate {
+                        max("toneladas") into "Max"
+                        min("toneladas") into "Min"
+                        mean("toneladas").toFloat() into "Media"
+                        std("toneladas") into "Desviación"
+                    }
+                println("Estadística de residuos por mes en: $distrito")
+                estadisticaPorMesResiduoDistrito.print()
+
+
+                fig = letsPlot(data = estadisticaPorMesResiduoDistrito.toMap()) + geomBar(
+                    stat = Stat.identity,
+                    alpha = 1,
+                    fill = "#117a65"
+                ) {
+                    x = "month"; y = "Max"
+                } + geomBar(
+                    stat = Stat.identity,
+                    alpha = 0.8,
+                    fill = "#138d75"
+                ) {
+                    x = "month"; y = "Media"
+                } + geomBar(
+                    stat = Stat.identity,
+                    alpha = 0.6,
+                    fill = "#45b39d"
+                ) {
+                    x = "month"; y = "Desviación"
+                } + geomBar(
+                    stat = Stat.identity,
+                    alpha = 0.3,
+                    fill = "#0b5345"
+                ) {
+                    x = "month"; y = "Min"
+                } + labs(
+                    x = "Meses",
+                    y = "Estadística",
+                    title = "Estadística de residuos por mes en $distrito"
+                )
+                ggsave(fig, "estadisticasResiduosPorMes$distrito.png")
+
+            } else {
+                println("Error: No existe el distrito")
+            }
 
         } else {
             println("Error: Falta un archivo.")
