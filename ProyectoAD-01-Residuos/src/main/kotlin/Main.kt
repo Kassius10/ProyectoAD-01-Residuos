@@ -21,6 +21,8 @@ fun main(args: Array<String>) {
  * @param args Argumentos necesarios que se reciben del main.
  */
 fun init(args: Array<String>) {
+     val RESOURCES = System.getProperty("user.dir")+"${File.separator}src${File.separator}" +
+            "main${File.separator}resources"
     if (args.isNotEmpty()) {
 
         if (args[0].equals("parser") && args.size >= 3) {
@@ -51,6 +53,13 @@ fun init(args: Array<String>) {
         println("Opción incorrecta.")
         exitProcess(0)
     }
+
+    //Creacion de la Bitacora
+
+    val bitacora = Bitacora(args[0],true,453452L)
+    bitacora.bitacoraXml(RESOURCES)
+
+
 }
 
 /**

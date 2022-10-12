@@ -13,7 +13,9 @@ import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
 import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
+import org.jetbrains.kotlinx.dataframe.io.DisplayConfiguration
 import org.jetbrains.kotlinx.dataframe.io.html
+import org.jetbrains.kotlinx.dataframe.size
 import java.io.File
 import java.io.FileWriter
 import java.time.LocalDateTime
@@ -70,13 +72,12 @@ object Resumen {
             //Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.
             val numeroContenedores = dataFrame.groupBy("distrito", "tipoContenedor")
                 .aggregate { count() into "Numero" }.sortByDesc("distrito").drop(1)
-
             println(" \n Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.")
-            println(numeroContenedores)
+            numeroContenedores.print()
 
             //Consultar la Media de contenedores de cada tipo que hay en cada Distrito.
 
-            val mediaDeContenedoresPorDistrito = numeroContenedores.groupBy("tipoContenedor")
+            val mediaDeContenedoresPorDistrito = numeroContenedores.groupBy("tipoContenedor", "distrito")
                 .aggregate { mean("Numero").toInt() into "Media de Contenedores" }
             println(" \n Consultar Media de Contenedores de cada tipo que hay en cada Distrito.")
             println(mediaDeContenedoresPorDistrito)
@@ -85,9 +86,7 @@ object Resumen {
 
             var graficoContenedores = ggplot(numeroContenedores.toMap()) +
                     geomTile { x = "distrito"; y = "tipoContenedor"; fill = "Numero" } +
-                    theme(panelBackground = elementBlank(), panelGrid = elementBlank())
-            scaleFillGradient("#00BCD4", "#009688") +
-                    ggsize(900, 400) +
+                    theme(panelBackground = elementBlank(), panelGrid = elementBlank()) +
                     ggtitle("Cantidad de contenedores por distrito")
 
             ggsave(graficoContenedores, "grafico1.png", path = "$RESOURCES${File.separator}img")
@@ -95,7 +94,7 @@ object Resumen {
 
             //Media de toneladaas annuales de recogidas por cada tipo de basura agrupadas por distrito
             var mediaToneladasAnualesPorDistrito = dataFrame2.groupBy("tipoResiduo", "distrito")
-                .aggregate { mean("toneladas").toInt() into "TONELADAS POR DIISTRITO" }.sortByDesc("distrito")
+                .aggregate { mean("toneladas").toInt() into "TONELADAS POR DISTRITO" }.sortByDesc("distrito")
             println(" \n Media de toneladaas annuales de recogidas por cada tipo de basura agrupadas por distrito")
             println(mediaToneladasAnualesPorDistrito)
 
@@ -121,6 +120,7 @@ object Resumen {
                     max("toneladas") into "Maxima"
                     min("toneladas") into "Minima"
                     mean("toneladas").toInt() into "Media"
+                    std("toneladas").toInt() into "Desviación"
                 }.sortByDesc("distrito")
             println(" \n Máximo, mínimo, media y desviación de toneladas anuales de recogidas por cada tipo de basura agrupadas por distrito")
             println(estadisticasToneladasAnualesPorDistrito)
@@ -134,7 +134,7 @@ object Resumen {
 
             // Por cada distrito obtener para cada tipo de residuo la cantidad recogida.
             var porDistritoCantidadRecogida = dataFrame2.groupBy("tipoResiduo", "distrito")
-                .aggregate { sum("toneladas").toInt() into "RECOGIDO" }
+                .aggregate { sum("toneladas").toInt() into "RECOGIDO" }.sortByDesc("distrito")
             println(" \n Por cada distrito obtener para cada tipo de residuo la cantidad recogida")
             println(porDistritoCantidadRecogida)
 
@@ -246,6 +246,9 @@ object Resumen {
 
     fun resumenDistrito(distrito: String) {
         println(distrito)
+
+
+
     }
 
 

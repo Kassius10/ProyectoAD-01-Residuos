@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.7.10"
-//    id("org.jetbrains.kotlinx.dataframe") version "0.8.1"ç
+//    id("org.jetbrains.kotlinx.dataframe") version "0.8.1"
     kotlin("plugin.serialization") version "1.7.10"
 }
 
