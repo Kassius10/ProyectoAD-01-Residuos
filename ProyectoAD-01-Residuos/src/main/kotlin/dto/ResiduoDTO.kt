@@ -3,12 +3,14 @@ package dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.serialization.XmlElement
+import org.jetbrains.kotlinx.dataframe.annotations.DataSchema
 
 /**
  * Data class de ResiduosDto
  */
 @Serializable
 @SerialName("Residuos")
+@DataSchema
 data class ResiduoDTO(
     @SerialName("Año")
     @XmlElement(true)

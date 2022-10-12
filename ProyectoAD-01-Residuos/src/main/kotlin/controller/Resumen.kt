@@ -137,7 +137,40 @@ object Resumen {
     }
 
     fun resumenDistrito(distrito: String) {
-        println(distrito)
+        if (!residuos.isEmpty() && !contenedores.isEmpty()) {
+            val dataFrameResiduos = residuos.toDataFrame()
+            dataFrameResiduos.cast<ResiduoDTO>()
+            val dataFrameContenedor = contenedores.toDataFrame()
+
+            println(dataFrameResiduos.schema())
+//            println(dataFrameResiduos.head(2))
+//            println("Numero de filas: ${dataFrameResiduos.rowsCount()}")
+//            dataFrameResiduos.select("distrito").print(10)
+
+//            var existe = dataFrameResiduos
+//                .groupBy("distrito")
+//                .aggregate {
+//                    count() into "total"
+//                }
+//                .filter { "distrito" == distrito }
+//            println("Existe: ")
+//            println(existe)
+
+            val distrit by column<String>("Centro")
+
+            var existe = dataFrameResiduos
+                .filterBy("distrito").equals("Centro")
+
+            println(existe)
+
+//            val numeroContenedores = dataFrameContenedor.groupBy("distrito", "tipoContenedor")
+//                .aggregate { count() into "Numero" }.sortByDesc("distrito").drop(1)
+//            println(" \n Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.")
+//            println(numeroContenedores)
+
+        } else {
+            println("Error: Falta un archivo.")
+        }
     }
 
 
