@@ -1,5 +1,6 @@
 package controller
 
+import Html
 import Identifier
 import dto.ContenedorDTO
 import dto.ResiduoDTO
@@ -14,10 +15,20 @@ import jetbrains.letsPlot.scale.scaleFillGradient
 import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
 import org.jetbrains.kotlinx.dataframe.io.DisplayConfiguration
+import org.jetbrains.kotlinx.dataframe.io.html
+import utils.formatToString
 import java.io.File
+import java.io.FileWriter
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.time.LocalDateTime
 
 object Resumen {
     private val logger = KotlinLogging.logger {}
+    private val IMAGES =
+        "${System.getProperty("user.dir")}${File.separator}src${File.separator}main${File.separator}resources${File.separator}img"
+    private val RESOURCES = System.getProperty("user.dir") + "${File.separator}src${File.separator}" +
+            "main${File.separator}resources"
     var residuos: List<ResiduoDTO> = mutableListOf()
     var contenedores: List<ContenedorDTO> = mutableListOf()
 
@@ -173,7 +184,7 @@ object Resumen {
                             y = "Tipo de Residuo",
                             title = "Total de toneladas por Residuos en $distrito"
                         )
-                ggsave(fig, "totalToneladasPorResiduos$distrito.png")
+                ggsave(fig, "totalToneladasPorResiduos$distrito.png", path = IMAGES)
 
 
                 val estadisticaPorMesResiduoDistrito = existeResiduo.groupBy("month", "distrito")
@@ -216,7 +227,18 @@ object Resumen {
                     y = "Estadística",
                     title = "Estadística de residuos por mes en $distrito"
                 )
-                ggsave(fig, "estadisticasResiduosPorMes$distrito.png")
+                ggsave(fig, "estadisticasResiduosPorMes$distrito.png", path = IMAGES)
+
+                var html = Html(
+                    LocalDateTime.now().formatToString(),
+                    distrito,
+                    tipoContenedoresDistrito.html(),
+                    totalToneladasPorResiduoDistrito.html(),
+                    estadisticaPorMesResiduoDistrito.html()
+                )
+                var fileHtml = FileWriter("$RESOURCES${File.separator}resumen.html")
+                fileHtml.write(html.generateResumenDistritoHtml())
+                fileHtml.close()
 
             } else {
                 println("Error: No existe el distrito")
@@ -224,6 +246,12 @@ object Resumen {
 
         } else {
             println("Error: Falta un archivo.")
+        }
+    }
+
+    fun createDirectoryImages() {
+        if (Files.notExists(Paths.get(IMAGES))) {
+            Files.createDirectory(Paths.get(IMAGES))
         }
     }
 

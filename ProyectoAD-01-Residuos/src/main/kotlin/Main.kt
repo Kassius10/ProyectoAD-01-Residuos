@@ -35,6 +35,8 @@ fun init(args: Array<String>) {
         } else if (args[0].equals("resumen") && args.size >= 3) {
 
             if (getDirectories(args)) {
+                Resumen.createDirectoryImages()
+
                 if (getDistrito(args) != "") {
                     var distrito = getDistrito(args)
                     findExtension(args, distrito)
