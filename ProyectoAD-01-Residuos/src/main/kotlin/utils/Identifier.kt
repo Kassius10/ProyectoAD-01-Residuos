@@ -1,3 +1,5 @@
+package utils
+
 import controller.ContenedorController
 import controller.ResiduoController
 import controller.Resumen
@@ -116,6 +118,22 @@ object Identifier {
             head.equals(headResiduo) -> return "residuo"
             head.equals(headContenedor) -> return "contenedor"
             else -> return throw IllegalArgumentException("El csv es incorrecto: $head")
+        }
+    }
+
+    /**
+     * Método para obtener los ficheros con diferentes extensiones del directorio origen y procesarlos.
+     * @param args Parámetros indicados por consola
+     * @param distrito Distrito que se ha indicado por parámetros si existe.
+     */
+    fun findExtension(directorioOrigen: String) {
+        var files = File(directorioOrigen).listFiles()?.toList()
+        files?.forEach {
+            when {
+                it.name.contains(".csv") -> isCSV(it)
+                it.name.contains(".xml") -> isXML(it)
+                it.name.contains(".json") -> isJSON(it)
+            }
         }
     }
 }

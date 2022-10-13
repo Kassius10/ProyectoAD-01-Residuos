@@ -1,7 +1,7 @@
 package controller
 
-import Html
-import Identifier
+import utils.Html
+import utils.Identifier
 import dto.ContenedorDTO
 import dto.ResiduoDTO
 import jetbrains.letsPlot.*
@@ -12,7 +12,6 @@ import jetbrains.letsPlot.intern.Plot
 import jetbrains.letsPlot.label.ggtitle
 import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
-import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
 import org.jetbrains.kotlinx.dataframe.io.DisplayConfiguration
 import org.jetbrains.kotlinx.dataframe.io.html
@@ -24,11 +23,13 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 
 object Resumen {
-    private val logger = KotlinLogging.logger {}
-    private val IMAGES =
-        "${System.getProperty("user.dir")}${File.separator}src${File.separator}main${File.separator}resources${File.separator}img"
-    private val RESOURCES = System.getProperty("user.dir") + "${File.separator}src${File.separator}" +
-            "main${File.separator}resources"
+    private var directorioOrigen: String = ""
+    private var directorioDestino: String = ""
+    private val RESOURCES =
+        "${System.getProperty("user.dir")}${File.separator}src${File.separator}main${File.separator}resources"
+    private lateinit var IMAGES: String
+    private lateinit var CSS: String
+
     var residuos: List<ResiduoDTO> = mutableListOf()
     var contenedores: List<ContenedorDTO> = mutableListOf()
 
@@ -37,35 +38,42 @@ object Resumen {
      * @param files Lista de ficheros que hay dentro de la carpeta origen indicada.
      * @param directorioDestino Directorio destino donde se almacenaran los nuevos ficheros.
      */
-    fun parser(files: List<File>?, directorioDestino: File) {
-        files?.forEach {
-            println("Repasamos los ficheros")
-            try {
-                var tipo = Identifier.getType(it)
-                when (tipo) {
-                    "residuo" -> {
-                        var lista = ResiduoController.loadDataFromCsv(it)
-                        ResiduoController.saveDataFromJson(it, lista, directorioDestino)
-                        ResiduoController.saveDataFromXml(it, lista, directorioDestino)
+    fun parser() {
+        var files = findCSV()
+
+        if (files.isNotEmpty()) {
+
+            files.forEach {
+                println("Repasamos los ficheros")
+                try {
+                    var tipo = Identifier.getType(it)
+                    when (tipo) {
+                        "residuo" -> {
+                            var lista = ResiduoController.loadDataFromCsv(it)
+                            ResiduoController.saveDataFromJson(it, lista, File(directorioDestino))
+                            ResiduoController.saveDataFromXml(it, lista, File(directorioDestino))
+                        }
+                        "contenedor" -> {
+                            var lista = ContenedorController.loadDataFromCsv(it)
+                            ContenedorController.saveDataFromJson(it, lista, File(directorioDestino))
+                            ContenedorController.saveDataFromXml(it, lista, File(directorioDestino))
+                        }
                     }
-                    "contenedor" -> {
-                        var lista = ContenedorController.loadDataFromCsv(it)
-                        ContenedorController.saveDataFromJson(it, lista, directorioDestino)
-                        ContenedorController.saveDataFromXml(it, lista, directorioDestino)
-                    }
+                } catch (e: Exception) {
+                    println("Error: " + e.message)
                 }
-
-            } catch (e: Exception) {
-                println(e.message)
             }
+        } else throw IllegalStateException("El directorio no contiene ficheros csv.")
 
-        }
+
     }
 
     /**
      * Método para consultar los datos correspondientes.
      */
     fun resumen() {
+        Identifier.findExtension(directorioOrigen)
+
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
             DisplayConfiguration.DEFAULT.rowsLimit = 5
             val dataFrame2 = residuos.toDataFrame()
@@ -144,12 +152,13 @@ object Resumen {
             println(" \n Por cada distrito obtener para cada tipo de residuo la cantidad recogida")
             println(porDistritoCantidadRecogida)
         } else {
-            println("Error: Falta un archivo.")
+            throw IllegalStateException("Error: Falta un archivo.")
         }
 
     }
 
     fun resumenDistrito(distrito: String) {
+        Identifier.findExtension(directorioOrigen)
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
             val dataFrameResiduos = residuos.toDataFrame().update { it["distrito"] }.with { it.toString().uppercase() }
             dataFrameResiduos.cast<ResiduoDTO>()
@@ -236,24 +245,58 @@ object Resumen {
                     totalToneladasPorResiduoDistrito.html(),
                     estadisticaPorMesResiduoDistrito.html()
                 )
-                var fileHtml = FileWriter("$RESOURCES${File.separator}resumen.html")
+                var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistrito.html")
                 fileHtml.write(html.generateResumenDistritoHtml())
                 fileHtml.close()
 
+                var fileCss = FileWriter("$CSS${File.separator}css.css")
+                fileCss.write(html.generateCss())
+                fileCss.close()
+
             } else {
-                println("Error: No existe el distrito")
+                throw IllegalStateException("Error: No existe el distrito")
             }
 
         } else {
-            println("Error: Falta un archivo.")
+            throw IllegalStateException("Error: Falta un archivo.")
         }
     }
 
-    fun createDirectoryImages() {
+    /**
+     * Método para comprobar si los directorios parámetros pertenecen a un directorio existente o no.
+     * @param args Parámetros indicados por consola
+     * @return Devuelve true si son directorios existentes y false si no existe el directorio.
+     */
+    fun getDirectories(args: Array<String>) {
+        var directories = args.takeLast(2)
+
+        for (dir in directories) {
+            if (!Files.isDirectory(Paths.get(dir))) {
+                throw IllegalStateException("No existe el directorio: $dir")
+            }
+        }
+        directorioOrigen = directories[0]
+        directorioDestino = directories[1]
+
+    }
+
+    /**
+     * Método para obtener los ficheros que contenga el directorio origen.
+     * @return Devuelve una lista de ficheros si existen.
+     */
+    fun findCSV(): List<File> {
+        return File(directorioOrigen).listFiles()!!.filter { it.absolutePath.contains(".csv") }
+    }
+
+    fun createDirectoryImagesAndCSS() {
+        IMAGES = "$directorioDestino${File.separator}img"
         if (Files.notExists(Paths.get(IMAGES))) {
             Files.createDirectory(Paths.get(IMAGES))
         }
+        CSS = "$directorioDestino${File.separator}css"
+        if (Files.notExists(Paths.get(CSS))) {
+            Files.createDirectory(Paths.get(CSS))
+        }
     }
-
 
 }

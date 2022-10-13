@@ -1,9 +1,7 @@
 import controller.Resumen
-import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
+import models.Bitacora
 import kotlin.system.exitProcess
+import kotlin.system.measureTimeMillis
 
 /**
  * Función main principal
@@ -21,52 +19,74 @@ fun main(args: Array<String>) {
  * @param args Argumentos necesarios que se reciben del main.
  */
 fun init(args: Array<String>) {
+    var isSucces = true
+
+    //Primero comprobamos si hay argumentos, si no hay manda un mensaje de error: Los argumentos son erróneos y cierra el programa.
     if (args.isNotEmpty()) {
 
+        // Segundo comprobamos los directorios si existen o no, y los almacenamos en Resumen, mandamos un mensaje de Error: no existe el directorio.
+        try {
+            Resumen.getDirectories(args)
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            exitProcess(0)
+        }
+
+        // Tercero comprobamos la opcion, si es parser, resumen o ninguno, mandamos un mensaje de Error: Opción de parámetro incorrecta
         if (args[0].equals("parser") && args.size >= 3) {
-            try {
-                var ficheros = findCSV(args)
-                var directorioDestino = getDirectory(args)
-                Resumen.parser(ficheros, directorioDestino)
-            } catch (e: IOException) {
-                println(e.message)
-            }
 
-        } else if (args[0].equals("resumen") && args.size >= 3) {
+            var tiempo = measureTimeMillis {
 
-            if (getDirectories(args)) {
-                Resumen.createDirectoryImages()
+                // Realizamos la operación de parser, si salta una exception mandamos el mensaje de Error
+                try {
+                    Resumen.parser()
 
-                if (getDistrito(args) != "") {
-                    var distrito = getDistrito(args)
-                    findExtension(args, distrito)
-                } else {
-                    findExtension(args, "")
+                } catch (e: Exception) {
+                    println("Error parser: ${e.message}")
+                    isSucces = false
                 }
             }
+            var bitacora = Bitacora("parser", isSucces, tiempo)
+            bitacora.bitacoraXml(args.last())
+
+            // Cuarta si la opcion es resumen, puede ser de dos tipos o con distrito o no.
+        } else if (args[0].equals("resumen") && args.size >= 3) {
+
+            var tiempo = System.currentTimeMillis()
+            Resumen.createDirectoryImagesAndCSS()
+
+            // Quinto si tiene distrito entra a la primera opcion, si no entra a la segunda.
+            if (getDistrito(args) != "") {
+                try {
+                    var distrito = getDistrito(args)
+                    Resumen.resumenDistrito(distrito)
+                } catch (e: Exception) {
+                    println(e.message)
+                    isSucces = false
+                }
+                var bitacora = Bitacora("resumen distrito", isSucces, System.currentTimeMillis() - tiempo)
+                bitacora.bitacoraXml(args.last())
+
+            } else {
+                try {
+                    Resumen.resumen()
+                } catch (e: Exception) {
+                    println(e.message)
+                    isSucces = false
+                }
+                var bitacora = Bitacora("resumen", isSucces, System.currentTimeMillis() - tiempo)
+                bitacora.bitacoraXml(args.last())
+            }
+
         } else {
-            println("Parámetros incorrectos")
+            println("Error: Opción de parámetro incorrecta")
             exitProcess(0)
         }
 
     } else {
-        println("Opción incorrecta.")
+        println("Error: Los argumentos son erróneos.")
         exitProcess(0)
     }
-}
-
-/**
- * Método para comprobar si los directorios parámetros pertenecen a un directorio existente o no.
- * @param args Parámetros indicados por consola
- * @return Devuelve true si son directorios existentes y false si no existe el directorio.
- */
-fun getDirectories(args: Array<String>): Boolean {
-    var directories = args.takeLast(2)
-    var ok = true
-    for (dir in directories) {
-        if (!Files.isDirectory(Paths.get(dir))) ok = false
-    }
-    return ok
 }
 
 /**
@@ -78,44 +98,3 @@ fun getDistrito(args: Array<String>): String {
     return args.drop(1).dropLast(2).joinToString(" ")
 }
 
-/**
- * Método para obtener el directorio origen.
- * @param args Parámetros indicados por consola
- * @return Devuelve el directorio si existe.
- */
-fun getDirectory(args: Array<String>): File {
-    val directorio = args.takeLast(1)
-    if (Files.isDirectory(Paths.get(directorio[0]))) {
-        return File(directorio[0])
-    } else return throw IOException("No existe el directorio destino: ${directorio[0]}")
-}
-
-/**
- * Método para obtener los ficheros que contenga el directorio origen.
- * @param args Parámetros indicados por consola
- * @return Devuelve una lista de ficheros si existen.
- */
-fun findCSV(args: Array<String>): List<File>? {
-    val directorio = args.takeLast(2)
-    if (Files.isDirectory(Paths.get(directorio[0]))) {
-        return File(directorio[0]).listFiles()?.filter { it.absolutePath.contains(".csv") }
-    } else return throw IOException("No existe el directorio: ${directorio[0]}")
-}
-
-/**
- * Método para obtener los ficheros con diferentes extensiones del directorio origen y procesarlos.
- * @param args Parámetros indicados por consola
- * @param distrito Distrito que se ha indicado por parámetros si existe.
- */
-fun findExtension(args: Array<String>, distrito: String) {
-    val directorio = args.takeLast(2)[0]
-    var files = File(directorio).listFiles()?.toList()
-    files?.forEach {
-        when {
-            it.name.contains(".csv") -> Identifier.isCSV(it)
-            it.name.contains(".xml") -> Identifier.isXML(it)
-            it.name.contains(".json") -> Identifier.isJSON(it)
-        }
-    }
-    if (distrito != "") Resumen.resumenDistrito(distrito) else Resumen.resumen()
-}
