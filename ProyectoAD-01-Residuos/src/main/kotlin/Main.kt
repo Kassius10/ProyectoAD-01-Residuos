@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
  */
 fun init(args: Array<String>) {
     var isSucces = true
-    
+
     if (args.isNotEmpty()) {
 
         try {

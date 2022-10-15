@@ -10,17 +10,15 @@ import jetbrains.letsPlot.intern.Plot
 import jetbrains.letsPlot.label.ggtitle
 import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
-import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.api.*
 import org.jetbrains.kotlinx.dataframe.io.html
 import utils.Html
 import utils.Identifier
-import utils.formatToString
+import utils.replaceAcents
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.time.LocalDateTime
 
 object Resumen {
     private var directorioOrigen: String = ""
@@ -86,7 +84,7 @@ object Resumen {
             numeroContenedores.print()
 
             //Consultar la Media de contenedores de cada tipo que hay en cada Distrito.
-            val mediaDeContenedoresPorDistrito = numeroContenedores.groupBy("tipoContenedor")
+            val mediaDeContenedoresPorDistrito = numeroContenedores.groupBy("tipoContenedor", "distrito")
                 .aggregate { mean("Numero").toInt() into "Media de Contenedores" }
             println(" \n Consultar Media de Contenedores de cada tipo que hay en cada Distrito.")
             println(mediaDeContenedoresPorDistrito)
@@ -95,18 +93,16 @@ object Resumen {
 
             var graficoContenedores = ggplot(numeroContenedores.toMap()) +
                     geomTile { x = "distrito"; y = "tipoContenedor"; fill = "Numero" } +
-                    theme(panelBackground = elementBlank(), panelGrid = elementBlank())
-            scaleFillGradient("#00BCD4", "#009688") +
-                    ggsize(900, 400) +
+                    theme(panelBackground = elementBlank(), panelGrid = elementBlank()) +
                     ggtitle("Cantidad de contenedores por distrito")
 
-            ggsave(graficoContenedores, "grafico1.png")
+            ggsave(graficoContenedores, "grafico1.png", path = IMAGES)
 
 
             //Media de toneladaas annuales de recogidas por cada tipo de basura agrupadas por distrito
             var mediaToneladasAnualesPorDistrito = dataFrame2.groupBy("tipoResiduo", "distrito")
-                .aggregate { mean("toneladas").toInt() into "TONELADAS POR DIISTRITO" }.sortByDesc("distrito")
-            println(" \n Media de toneladaas annuales de recogidas por cada tipo de basura agrupadas por distrito")
+                .aggregate { mean("toneladas").toInt() into "TONELADAS POR DISTRITO" }.sortByDesc("distrito")
+            println(" \n Media de toneladas anuales de recogidas por cada tipo de basura agrupadas por distrito")
             println(mediaToneladasAnualesPorDistrito)
 
             //Gráfico de media de Toneladas mensuales recogidas de basura por distrito
@@ -123,7 +119,7 @@ object Resumen {
                 title = "Grafico Residuos"
             )
 
-            ggsave(graficoResiduos, "grafico2.png")
+            ggsave(graficoResiduos, "grafico2.png", path = IMAGES)
 
 
             //  Máximo, mínimo , media y desviación de toneladas anuales de recogidas por cada tipo de basura agrupadas por distrito.
@@ -132,6 +128,7 @@ object Resumen {
                     max("toneladas") into "Maxima"
                     min("toneladas") into "Minima"
                     mean("toneladas").toInt() into "Media"
+                    std("toneladas").toInt() into "Desviación"
                 }.sortByDesc("distrito")
             println(" \n Máximo, mínimo, media y desviación de toneladas anuales de recogidas por cada tipo de basura agrupadas por distrito")
             println(estadisticasToneladasAnualesPorDistrito)
@@ -145,9 +142,18 @@ object Resumen {
 
             // Por cada distrito obtener para cada tipo de residuo la cantidad recogida.
             var porDistritoCantidadRecogida = dataFrame2.groupBy("tipoResiduo", "distrito")
-                .aggregate { sum("toneladas").toInt() into "RECOGIDO" }
+                .aggregate { sum("toneladas").toInt() into "RECOGIDO" }.sortByDesc("distrito")
             println(" \n Por cada distrito obtener para cada tipo de residuo la cantidad recogida")
             println(porDistritoCantidadRecogida)
+
+            generarHtmlResumen(
+                numeroContenedores.html(),
+                mediaDeContenedoresPorDistrito.html(),
+                mediaToneladasAnualesPorDistrito.html(),
+                estadisticasToneladasAnualesPorDistrito.html(),
+                sumaRecogidosPorDistrito.html(),
+                porDistritoCantidadRecogida.html()
+            )
         } else {
             throw IllegalStateException("Error: Falta un archivo.")
         }
@@ -158,13 +164,16 @@ object Resumen {
      * Método de resumen por distrito
      * @param distrito Distrito necesario para realizar las consultas sobre él
      */
-    fun resumenDistrito(distrito: String) {
+    fun resumenDistrito(dis: String) {
         Identifier.findExtension(directorioOrigen)
 
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
-            val dataFrameResiduos = residuos.toDataFrame().update { it["distrito"] }.with { it.toString().uppercase() }
+            var distrito = replaceAcents(dis)
+            val dataFrameResiduos =
+                residuos.toDataFrame().update { it["distrito"] }.with { replaceAcents(it.toString().uppercase()) }
             dataFrameResiduos.cast<ResiduoDTO>()
-            val dataFrameContenedor = contenedores.toDataFrame()
+            val dataFrameContenedor =
+                contenedores.toDataFrame().update { it["distrito"] }.with { replaceAcents(it.toString().uppercase()) }
             dataFrameContenedor.cast<ContenedorDTO>()
 
 
@@ -240,9 +249,9 @@ object Resumen {
 
                 generarHtmlResumenDistrito(
                     distrito,
-                    tipoContenedoresDistrito,
-                    totalToneladasPorResiduoDistrito,
-                    estadisticaPorMesResiduoDistrito
+                    tipoContenedoresDistrito.html(),
+                    totalToneladasPorResiduoDistrito.html(),
+                    estadisticaPorMesResiduoDistrito.html()
                 )
 
 
@@ -297,28 +306,70 @@ object Resumen {
     }
 
     /**
-     * Método que genera el html.
+     * Método que genera el html de resumen distrito.
+     * @param distrito Distrito del resumen
+     * @param tipoContenedoresDistrito Primera consulta
+     * @param totalToneladasPorResiduoDistrito Segunda consulta
+     * @param estadisticaPorMesResiduoDistrito Tercera consulta
      */
     private fun generarHtmlResumenDistrito(
         distrito: String,
-        tipoContenedoresDistrito: DataFrame<ContenedorDTO>,
-        totalToneladasPorResiduoDistrito: DataFrame<ResiduoDTO>,
-        estadisticaPorMesResiduoDistrito: DataFrame<ResiduoDTO>
+        tipoContenedoresDistrito: String,
+        totalToneladasPorResiduoDistrito: String,
+        estadisticaPorMesResiduoDistrito: String,
     ) {
-        var html = Html(
-            LocalDateTime.now().formatToString(),
-            distrito,
-            tipoContenedoresDistrito.html(),
-            totalToneladasPorResiduoDistrito.html(),
-            estadisticaPorMesResiduoDistrito.html()
-        )
+        var html = Html()
         var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistrito.html")
-        fileHtml.write(html.generateResumenDistritoHtml())
+        fileHtml.write(
+            html.generateResumenDistritoHtml(
+                distrito,
+                tipoContenedoresDistrito,
+                totalToneladasPorResiduoDistrito,
+                estadisticaPorMesResiduoDistrito
+            )
+        )
         fileHtml.close()
 
         var fileCss = FileWriter("$CSS${File.separator}css.css")
         fileCss.write(html.generateCss())
         fileCss.close()
+    }
+
+    /**
+     * Método que genera el html de resumen.
+     * @param numeroContenedoresTipo Primera consulta
+     * @param mediaContenedoresTipo Segunda consulta
+     * @param mediaToneladasAnuales Tercera consulta
+     * @param maxMinMediaToneladasAnuales Cuarta consulta
+     * @param sumaRecogidosPorDistrito Quinta consulta
+     * @param porDistritoCantidadRecogida Sexta consulta
+     */
+    private fun generarHtmlResumen(
+        numeroContenedoresTipo: String,
+        mediaContenedoresTipo: String,
+        mediaToneladasAnuales: String,
+        maxMinMediaToneladasAnuales: String,
+        sumaRecogidosPorDistrito: String,
+        porDistritoCantidadRecogida: String,
+    ) {
+        var html = Html()
+        var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistritos.html")
+        fileHtml.write(
+            html.generateResumenHtml(
+                numeroContenedoresTipo,
+                mediaContenedoresTipo,
+                mediaToneladasAnuales,
+                maxMinMediaToneladasAnuales,
+                sumaRecogidosPorDistrito,
+                porDistritoCantidadRecogida
+            )
+        )
+        fileHtml.close()
+
+        var fileCss = FileWriter("$CSS${File.separator}css.css")
+        fileCss.write(html.generateCss())
+        fileCss.close()
+
     }
 
 }
