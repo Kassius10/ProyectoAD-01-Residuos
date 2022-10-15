@@ -6,6 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import nl.adaptivity.xmlutil.serialization.XML
 import java.io.File
+import java.nio.charset.Charset
 
 /**
  * Clase encargada del control de ficheros de residuos.
@@ -54,14 +55,34 @@ object ResiduoController {
     }
 
     /**
-     * Función para almacenar los datos de contenedores en un fichero json.
+     * Función para almacenar los datos de residuos en un fichero csv.
+     * @param file Fichero necesario para indicar como almacenar los datos.
+     * @param residuos Lista de residuos.
+     * @param directorioDestino Directorio donde se va a almacenar.
+     */
+    fun saveDataFromCsv(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
+        val fileCSV = directorioDestino.absolutePath + File.separator + file.name
+        println("Ruta del nuevo fichero: $fileCSV")
+        File(fileCSV).bufferedWriter(Charset.forName("UTF-8")).use { out ->
+            out.write("Año;Mes;Lote;Residuo;Distrito;Nombre Distrito;Toneladas")
+            out.newLine()
+            residuos.forEach {
+                out.write(it.toString(";"))
+                out.newLine()
+            }
+        }
+        println("Fichero creado")
+    }
+
+
+    /**
+     * Función para almacenar los datos de residuos en un fichero json.
      * @param file Fichero necesario para indicar como almacenar los datos.
      * @param residuos Lista de residuos.
      * @param directorioDestino Directorio donde se va a almacenar.
      */
     fun saveDataFromJson(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
-        var fileName = file.name.replace(".csv", ".json")
-        val fileJson = directorioDestino.absolutePath + File.separator + fileName
+        val fileJson = directorioDestino.absolutePath + File.separator + file.name.replace(".csv", ".json")
         println("Ruta del nuevo fichero: $fileJson")
         val json = Json { prettyPrint = true }
         File(fileJson).writeText(json.encodeToString(residuos))
@@ -69,17 +90,17 @@ object ResiduoController {
     }
 
     /**
-     * Función para almacenar los datos de contenedores en un fichero xml.
+     * Función para almacenar los datos de residuos en un fichero xml.
      * @param file Fichero necesario para indicar como almacenar los datos.
      * @param residuos Lista de contenedores.
      * @param directorioDestino Directorio donde se va a almacenar.
      */
     fun saveDataFromXml(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
-        var fileName = file.name.replace(".csv", ".xml")
-        val fileXml = directorioDestino.absolutePath + File.separator + fileName
+        val fileXml = directorioDestino.absolutePath + File.separator + file.name.replace(".csv", ".xml")
         println("Ruta del nuevo fichero: $fileXml")
         val xml = XML { indent = 4 }
         File(fileXml).writeText(xml.encodeToString(residuos))
+        println("Fichero creado")
     }
 
 }

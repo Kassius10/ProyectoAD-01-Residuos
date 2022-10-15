@@ -20,11 +20,9 @@ fun main(args: Array<String>) {
  */
 fun init(args: Array<String>) {
     var isSucces = true
-
-    //Primero comprobamos si hay argumentos, si no hay manda un mensaje de error: Los argumentos son erróneos y cierra el programa.
+    
     if (args.isNotEmpty()) {
 
-        // Segundo comprobamos los directorios si existen o no, y los almacenamos en Resumen, mandamos un mensaje de Error: no existe el directorio.
         try {
             Resumen.getDirectories(args)
         } catch (e: Exception) {
@@ -32,12 +30,10 @@ fun init(args: Array<String>) {
             exitProcess(0)
         }
 
-        // Tercero comprobamos la opcion, si es parser, resumen o ninguno, mandamos un mensaje de Error: Opción de parámetro incorrecta
         if (args[0].equals("parser") && args.size >= 3) {
 
             var tiempo = measureTimeMillis {
 
-                // Realizamos la operación de parser, si salta una exception mandamos el mensaje de Error
                 try {
                     Resumen.parser()
 
@@ -49,13 +45,11 @@ fun init(args: Array<String>) {
             var bitacora = Bitacora("parser", isSucces, tiempo)
             bitacora.bitacoraXml(args.last())
 
-            // Cuarta si la opcion es resumen, puede ser de dos tipos o con distrito o no.
         } else if (args[0].equals("resumen") && args.size >= 3) {
 
             var tiempo = System.currentTimeMillis()
             Resumen.createDirectoryImagesAndCSS()
 
-            // Quinto si tiene distrito entra a la primera opcion, si no entra a la segunda.
             if (getDistrito(args) != "") {
                 try {
                     var distrito = getDistrito(args)

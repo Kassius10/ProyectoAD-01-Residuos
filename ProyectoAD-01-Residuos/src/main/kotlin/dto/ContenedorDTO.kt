@@ -55,4 +55,13 @@ data class ContenedorDTO(
     @SerialName("DIRECCION")
     @XmlElement(true)
     val direction: String
-)
+) {
+    /**
+     * Método para imprimir el objeto en una sola línea indicándole el separador que queremos que tenga.
+     * @param separator Cadena por la que queremos separar
+     * @return Devuelve la cadena con el formato indicado.
+     */
+    fun toString(separator: String): String {
+        return "$codigoInterno$separator$tipoContenedor$separator$modelo$separator$description$separator$cantidad$separator$lote$separator$distrito$separator$barrio$separator$tipoVia$separator$nombre$separator$numero$separator$coordenadaX$separator$coordenadaY$separator$longitud$separator$latitud$separator$direction"
+    }
+}

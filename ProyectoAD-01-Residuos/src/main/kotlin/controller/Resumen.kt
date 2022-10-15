@@ -1,7 +1,5 @@
 package controller
 
-import utils.Html
-import utils.Identifier
 import dto.ContenedorDTO
 import dto.ResiduoDTO
 import jetbrains.letsPlot.*
@@ -12,9 +10,11 @@ import jetbrains.letsPlot.intern.Plot
 import jetbrains.letsPlot.label.ggtitle
 import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
+import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.api.*
-import org.jetbrains.kotlinx.dataframe.io.DisplayConfiguration
 import org.jetbrains.kotlinx.dataframe.io.html
+import utils.Html
+import utils.Identifier
 import utils.formatToString
 import java.io.File
 import java.io.FileWriter
@@ -35,8 +35,6 @@ object Resumen {
 
     /**
      * Método que procesa los datos de los ficheros csv que se obtengan y genera los archivos correspondientes.
-     * @param files Lista de ficheros que hay dentro de la carpeta origen indicada.
-     * @param directorioDestino Directorio destino donde se almacenaran los nuevos ficheros.
      */
     fun parser() {
         var files = findCSV()
@@ -46,17 +44,19 @@ object Resumen {
             files.forEach {
                 println("Repasamos los ficheros")
                 try {
-                    var tipo = Identifier.getType(it)
-                    when (tipo) {
+                    when (Identifier.getType(it)) {
                         "residuo" -> {
                             var lista = ResiduoController.loadDataFromCsv(it)
                             ResiduoController.saveDataFromJson(it, lista, File(directorioDestino))
                             ResiduoController.saveDataFromXml(it, lista, File(directorioDestino))
+                            ResiduoController.saveDataFromCsv(it, lista, File(directorioDestino))
+
                         }
                         "contenedor" -> {
                             var lista = ContenedorController.loadDataFromCsv(it)
                             ContenedorController.saveDataFromJson(it, lista, File(directorioDestino))
                             ContenedorController.saveDataFromXml(it, lista, File(directorioDestino))
+                            ContenedorController.saveDataFromCsv(it, lista, File(directorioDestino))
                         }
                     }
                 } catch (e: Exception) {
@@ -75,20 +75,17 @@ object Resumen {
         Identifier.findExtension(directorioOrigen)
 
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
-            DisplayConfiguration.DEFAULT.rowsLimit = 5
             val dataFrame2 = residuos.toDataFrame()
-
             val dataFrame = contenedores.toDataFrame()
 
 
-            //Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.
+            //Consultar Número de Contenedores de cada tipo que hay en cada Distrito.
             val numeroContenedores = dataFrame.groupBy("distrito", "tipoContenedor")
                 .aggregate { count() into "Numero" }.sortByDesc("distrito").drop(1)
             println(" \n Consultar Numero de Contenedores de cada tipo que hay en cada Distrito.")
             numeroContenedores.print()
 
             //Consultar la Media de contenedores de cada tipo que hay en cada Distrito.
-
             val mediaDeContenedoresPorDistrito = numeroContenedores.groupBy("tipoContenedor")
                 .aggregate { mean("Numero").toInt() into "Media de Contenedores" }
             println(" \n Consultar Media de Contenedores de cada tipo que hay en cada Distrito.")
@@ -157,8 +154,13 @@ object Resumen {
 
     }
 
+    /**
+     * Método de resumen por distrito
+     * @param distrito Distrito necesario para realizar las consultas sobre él
+     */
     fun resumenDistrito(distrito: String) {
         Identifier.findExtension(directorioOrigen)
+
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
             val dataFrameResiduos = residuos.toDataFrame().update { it["distrito"] }.with { it.toString().uppercase() }
             dataFrameResiduos.cast<ResiduoDTO>()
@@ -172,9 +174,7 @@ object Resumen {
             if (existeResiduo.rowsCount() > 0 && existeContenedor.rowsCount() > 0) {
 
                 val tipoContenedoresDistrito = existeContenedor.groupBy("tipoContenedor", "distrito")
-                    .aggregate {
-                        count() into "Total"
-                    }
+                    .aggregate { count() into "Total" }
                 println("Número de contenedores de cada tipo que hay en: $distrito")
                 tipoContenedoresDistrito.print()
 
@@ -238,20 +238,13 @@ object Resumen {
                 )
                 ggsave(fig, "estadisticasResiduosPorMes$distrito.png", path = IMAGES)
 
-                var html = Html(
-                    LocalDateTime.now().formatToString(),
+                generarHtmlResumenDistrito(
                     distrito,
-                    tipoContenedoresDistrito.html(),
-                    totalToneladasPorResiduoDistrito.html(),
-                    estadisticaPorMesResiduoDistrito.html()
+                    tipoContenedoresDistrito,
+                    totalToneladasPorResiduoDistrito,
+                    estadisticaPorMesResiduoDistrito
                 )
-                var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistrito.html")
-                fileHtml.write(html.generateResumenDistritoHtml())
-                fileHtml.close()
 
-                var fileCss = FileWriter("$CSS${File.separator}css.css")
-                fileCss.write(html.generateCss())
-                fileCss.close()
 
             } else {
                 throw IllegalStateException("Error: No existe el distrito")
@@ -263,9 +256,8 @@ object Resumen {
     }
 
     /**
-     * Método para comprobar si los directorios parámetros pertenecen a un directorio existente o no.
+     * Método para comprobar si los directorios existen y almacenarlos después.
      * @param args Parámetros indicados por consola
-     * @return Devuelve true si son directorios existentes y false si no existe el directorio.
      */
     fun getDirectories(args: Array<String>) {
         var directories = args.takeLast(2)
@@ -284,12 +276,16 @@ object Resumen {
      * Método para obtener los ficheros que contenga el directorio origen.
      * @return Devuelve una lista de ficheros si existen.
      */
-    fun findCSV(): List<File> {
+    private fun findCSV(): List<File> {
         return File(directorioOrigen).listFiles()!!.filter { it.absolutePath.contains(".csv") }
     }
 
+    /**
+     * Método que crea los directorios css e img en la ruta destino.
+     */
     fun createDirectoryImagesAndCSS() {
-        IMAGES = "$directorioDestino${File.separator}img"
+        var imagen = "$RESOURCES${File.separator}img${File.separator}logo.jpg"
+        IMAGES = "$directorioDestino${File.separator}img${File.separator}"
         if (Files.notExists(Paths.get(IMAGES))) {
             Files.createDirectory(Paths.get(IMAGES))
         }
@@ -297,6 +293,32 @@ object Resumen {
         if (Files.notExists(Paths.get(CSS))) {
             Files.createDirectory(Paths.get(CSS))
         }
+        File(imagen).copyTo(File("$IMAGES${File.separator}logo.jpg"), true)
+    }
+
+    /**
+     * Método que genera el html.
+     */
+    private fun generarHtmlResumenDistrito(
+        distrito: String,
+        tipoContenedoresDistrito: DataFrame<ContenedorDTO>,
+        totalToneladasPorResiduoDistrito: DataFrame<ResiduoDTO>,
+        estadisticaPorMesResiduoDistrito: DataFrame<ResiduoDTO>
+    ) {
+        var html = Html(
+            LocalDateTime.now().formatToString(),
+            distrito,
+            tipoContenedoresDistrito.html(),
+            totalToneladasPorResiduoDistrito.html(),
+            estadisticaPorMesResiduoDistrito.html()
+        )
+        var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistrito.html")
+        fileHtml.write(html.generateResumenDistritoHtml())
+        fileHtml.close()
+
+        var fileCss = FileWriter("$CSS${File.separator}css.css")
+        fileCss.write(html.generateCss())
+        fileCss.close()
     }
 
 }

@@ -123,8 +123,7 @@ object Identifier {
 
     /**
      * Método para obtener los ficheros con diferentes extensiones del directorio origen y procesarlos.
-     * @param args Parámetros indicados por consola
-     * @param distrito Distrito que se ha indicado por parámetros si existe.
+     * @param directorioOrigen Directorio origen que contiene los ficheros.
      */
     fun findExtension(directorioOrigen: String) {
         var files = File(directorioOrigen).listFiles()?.toList()

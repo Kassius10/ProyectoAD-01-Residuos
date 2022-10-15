@@ -24,6 +24,10 @@ data class Bitacora(
     @XmlElement(true)
     val instante: String = LocalDateTime.now().formatToISO8601()
 
+    /**
+     * Método para crear el fichero xml de bitácora.
+     * @param path Ruta donde queremos almacenar el fichero bitácora.
+     */
     fun bitacoraXml(path: String) {
         val xml = XML { indentString = "  " }
         val bitacora = File(path + File.separator + "bitacoraCompleta$id.xml")

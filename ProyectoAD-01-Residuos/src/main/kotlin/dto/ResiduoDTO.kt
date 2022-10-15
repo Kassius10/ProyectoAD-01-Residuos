@@ -33,4 +33,13 @@ data class ResiduoDTO(
     @SerialName("Toneladas")
     @XmlElement(true)
     val toneladas: Double
-)
+) {
+    /**
+     * Método para imprimir el objeto en una sola línea indicándole el separador que queremos que tenga.
+     * @param separator Cadena por la que queremos separar
+     * @return Devuelve la cadena con el formato indicado.
+     */
+    fun toString(separator: String): String {
+        return "$year$separator$month$separator$lote$separator$tipoResiduo$separator$numDistrito$separator$distrito$separator$toneladas"
+    }
+}

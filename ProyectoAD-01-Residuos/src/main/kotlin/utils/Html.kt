@@ -9,6 +9,10 @@ class Html(
     private val totalToneladasPorResiduoDistrito: String,
     private val estadisticaPorMesResiduoDistrito: String,
 ) {
+    /**
+     * Método que genera el html de resumen de distrito
+     * @return Devuelve una cadena con el contenido del html.
+     */
     fun generateResumenDistritoHtml(): String {
         return """
             <!DOCTYPE html>
@@ -21,7 +25,7 @@ class Html(
                <title>Resumen $distrito</title>
             </head>
             <body>
-               <img id="logo" src=".${File.separator}resources${File.separator}img${File.separator}logo.jpg">
+               <img id="logo" src=".${File.separator}img${File.separator}logo.jpg">
                
                <h1 id ="titulo">Resumen de Recogidas y Reciclaje de contenendores del distrito: $distrito</h1>
 
@@ -69,6 +73,10 @@ class Html(
         """.trimIndent()
     }
 
+    /**
+     * Método que genera el css necesario de los html.
+     * @return Devuelve una cadena con el contenido del css.
+     */
     fun generateCss(): String {
         return """
             #logo{
@@ -96,6 +104,10 @@ class Html(
             #minicontainer{
                margin-left: 1.5em;
                color: #0CABA8;
+            }
+            table{
+               margin: 0 auto;
+               width:40%;
             }
             h1{
                font-size: 3.08em;
