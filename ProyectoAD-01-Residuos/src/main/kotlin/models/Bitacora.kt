@@ -2,12 +2,15 @@ package models
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import mu.KotlinLogging
 import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import utils.formatToISO8601
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
+
+private val logger = KotlinLogging.logger {}
 
 @Serializable
 data class Bitacora(
@@ -31,6 +34,7 @@ data class Bitacora(
     fun bitacoraXml(path: String) {
         val xml = XML { indentString = "  " }
         val bitacora = File(path + File.separator + "bitacoraCompleta$id.xml")
+        logger.debug { "Ruta del nuevo fichero bitácora: $bitacora" }
         bitacora.writeText(xml.encodeToString(this))
     }
 }

@@ -2,6 +2,7 @@ package controller
 
 import dto.ContenedorDTO
 import dto.ResiduoDTO
+import exceptions.FicherosException
 import jetbrains.letsPlot.*
 import jetbrains.letsPlot.export.ggsave
 import jetbrains.letsPlot.geom.geomBar
@@ -10,16 +11,21 @@ import jetbrains.letsPlot.intern.Plot
 import jetbrains.letsPlot.label.ggtitle
 import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
+import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
 import org.jetbrains.kotlinx.dataframe.io.html
 import utils.Html
 import utils.Identifier
 import utils.replaceAcents
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.*
+
+private val logger = KotlinLogging.logger {}
 
 object Resumen {
     private var directorioOrigen: String = ""
@@ -36,34 +42,71 @@ object Resumen {
      * Método que procesa los datos de los ficheros csv que se obtengan y genera los archivos correspondientes.
      */
     fun parser() {
+        logger.debug { "Buscando ficheros csv en el directorio origen..." }
         var files = findCSV()
 
-        if (files.isNotEmpty()) {
 
+        if (files.isNotEmpty()) {
+            logger.debug { "Ficheros encontrados exitosamente" }
             files.forEach {
-                println("Repasamos los ficheros")
                 try {
+                    logger.debug { "Identificando la clase del fichero" }
                     when (Identifier.getType(it)) {
                         "residuo" -> {
-                            var lista = ResiduoController.loadDataFromCsv(it)
-                            ResiduoController.saveDataFromJson(it, lista, File(directorioDestino))
-                            ResiduoController.saveDataFromXml(it, lista, File(directorioDestino))
-                            ResiduoController.saveDataFromCsv(it, lista, File(directorioDestino))
 
+                            var lista = ResiduoController.loadDataFromCsv(it)
+                            var pool = Executors.newFixedThreadPool(3)
+
+                            val futureJson = pool.submit {
+                                ResiduoController.saveDataFromJson(it, lista, File(directorioDestino))
+                                logger.debug { "Guardando datos de residuos en JSON..." }
+                            }
+                            val futureXml = pool.submit {
+                                ResiduoController.saveDataFromXml(it, lista, File(directorioDestino))
+                                logger.debug { "Guardando datos de residuos en XML..." }
+                            }
+                            val futureCsv = pool.submit {
+                                ResiduoController.saveDataFromCsv(it, lista, File(directorioDestino))
+                                logger.debug { "Guardando datos de residuos en CSV..." }
+                            }
+
+                            futureJson.get()
+                            futureXml.get()
+                            futureCsv.get()
+                            pool.shutdown()
+
+                            logger.debug { "Datos guardados correctamente" }
                         }
                         "contenedor" -> {
+
                             var lista = ContenedorController.loadDataFromCsv(it)
-                            ContenedorController.saveDataFromJson(it, lista, File(directorioDestino))
-                            ContenedorController.saveDataFromXml(it, lista, File(directorioDestino))
-                            ContenedorController.saveDataFromCsv(it, lista, File(directorioDestino))
+                            var pool = Executors.newFixedThreadPool(3)
+
+                            val futureJson = pool.submit {
+                                ContenedorController.saveDataFromJson(it, lista, File(directorioDestino))
+                                logger.debug { "Guardando datos de contenedores en JSON..." }
+                            }
+                            val futureXml = pool.submit {
+                                ContenedorController.saveDataFromXml(it, lista, File(directorioDestino))
+                                logger.debug { "Guardando datos de contenedores en XML..." }
+                            }
+                            val futureCsv = pool.submit {
+                                ContenedorController.saveDataFromCsv(it, lista, File(directorioDestino))
+                                logger.debug { "Guardando datos de contenedores en CSV..." }
+                            }
+
+                            futureJson.get()
+                            futureXml.get()
+                            futureCsv.get()
+                            pool.shutdown()
+                            logger.debug { "Datos guardados correctamente" }
                         }
                     }
                 } catch (e: Exception) {
-                    throw IllegalStateException(e.message)
+                    throw FicherosException(e.message)
                 }
             }
-        } else throw IllegalStateException("El directorio no contiene ficheros csv.")
-
+        } else throw FicherosException("El directorio no contiene ficheros csv.")
 
     }
 
@@ -72,13 +115,20 @@ object Resumen {
      */
     fun resumen() {
         val tiempoGeneracion = System.currentTimeMillis()
+        logger.debug { "Buscando ficheros necesarios para la toma de datos..." }
         Identifier.findExtension(directorioOrigen)
 
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
+            logger.debug { "Datos obtenidos con éxito." }
+            logger.debug { "Cargando datos de residuos..." }
             val dataFrame2 = residuos.toDataFrame()
+            logger.debug { "Datos cargados: ${dataFrame2.rowsCount()}" }
+
+            logger.debug { "Cargando datos de contenedores..." }
             val dataFrame = contenedores.toDataFrame()
+            logger.debug { "Datos cargados: ${dataFrame.rowsCount()}" }
 
-
+            logger.debug { "Generando consultas..." }
             //Consultar Número de Contenedores de cada tipo que hay en cada Distrito.
             val numeroContenedores = dataFrame.groupBy("distrito", "tipoContenedor")
                 .aggregate { count() into "Numero" }.sortByDesc("distrito").drop(1)
@@ -99,6 +149,7 @@ object Resumen {
                     ggtitle("Cantidad de contenedores por distrito")
 
             ggsave(graficoContenedores, "grafico1.png", path = IMAGES)
+            logger.debug { "Generando gráfica en $IMAGES" }
 
 
             //Media de toneladaas annuales de recogidas por cada tipo de basura agrupadas por distrito
@@ -122,6 +173,7 @@ object Resumen {
             )
 
             ggsave(graficoResiduos, "grafico2.png", path = IMAGES)
+            logger.debug { "Generando gráfica en $IMAGES" }
 
 
             //  Máximo, mínimo , media y desviación de toneladas anuales de recogidas por cada tipo de basura agrupadas por distrito.
@@ -148,6 +200,9 @@ object Resumen {
             println(" \n Por cada distrito obtener para cada tipo de residuo la cantidad recogida")
             println(porDistritoCantidadRecogida)
 
+            logger.debug { "Datos consultados exitosamente." }
+
+            logger.debug { "Generando html de resumen de distritos..." }
             generarHtmlResumen(
                 tiempoGeneracion,
                 numeroContenedores.html(),
@@ -158,7 +213,7 @@ object Resumen {
                 porDistritoCantidadRecogida.html()
             )
         } else {
-            throw IllegalStateException("Error: Falta un archivo.")
+            throw FileNotFoundException("Error: Falta un archivo.")
         }
 
     }
@@ -169,23 +224,33 @@ object Resumen {
      */
     fun resumenDistrito(dis: String) {
         val tiempoGeneracion = System.currentTimeMillis()
+        logger.debug { "Buscando ficheros necesarios para la toma de datos..." }
         Identifier.findExtension(directorioOrigen)
 
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
+            logger.debug { "Datos obtenidos con éxito." }
             var distrito = replaceAcents(dis).uppercase()
+
+            logger.debug { "Cargando datos de residuos..." }
             val dataFrameResiduos =
                 residuos.toDataFrame().update { it["distrito"] }.with { replaceAcents(it.toString().uppercase()) }
             dataFrameResiduos.cast<ResiduoDTO>()
+            logger.debug { "Datos cargados: ${dataFrameResiduos.rowsCount()}" }
+
+            logger.debug { "Cargando datos de contenedores..." }
             val dataFrameContenedor =
                 contenedores.toDataFrame().update { it["distrito"] }.with { replaceAcents(it.toString().uppercase()) }
             dataFrameContenedor.cast<ContenedorDTO>()
+            logger.debug { "Datos cargados: ${dataFrameContenedor.rowsCount()}" }
 
 
+            logger.debug { "Comprobando que el distrito exista: $distrito" }
             val existeResiduo = dataFrameResiduos.filter { it["distrito"] == distrito }
             val existeContenedor = dataFrameContenedor.filter { it["distrito"] == distrito }
 
             if (existeResiduo.rowsCount() > 0 && existeContenedor.rowsCount() > 0) {
 
+                logger.debug { "Generando consultas..." }
                 val tipoContenedoresDistrito = existeContenedor.groupBy("tipoContenedor", "distrito")
                     .aggregate { count() into "Total" }
                 println("Número de contenedores de cada tipo que hay en: $distrito")
@@ -207,6 +272,7 @@ object Resumen {
                             title = "Total de toneladas por Residuos en $distrito"
                         )
                 ggsave(fig, "totalToneladasPorResiduos$distrito.png", path = IMAGES)
+                logger.debug { "Generando gráfica en $IMAGES" }
 
 
                 val estadisticaPorMesResiduoDistrito = existeResiduo.groupBy("month", "distrito")
@@ -250,7 +316,10 @@ object Resumen {
                     title = "Estadística de residuos por mes en $distrito"
                 )
                 ggsave(fig, "estadisticasResiduosPorMes$distrito.png", path = IMAGES)
+                logger.debug { "Generando gráfica en $IMAGES" }
+                logger.debug { "Datos consultados exitosamente." }
 
+                logger.debug { "Generando html de resumen distrito..." }
                 generarHtmlResumenDistrito(
                     tiempoGeneracion,
                     distrito,
@@ -265,7 +334,7 @@ object Resumen {
             }
 
         } else {
-            throw IllegalStateException("Error: Falta un archivo.")
+            throw FileNotFoundException("Error: Falta un archivo.")
         }
     }
 
@@ -278,7 +347,7 @@ object Resumen {
 
         for (dir in directories) {
             if (!Files.isDirectory(Paths.get(dir))) {
-                throw IllegalStateException("No existe el directorio: $dir")
+                throw FileNotFoundException("No existe el directorio: $dir")
             }
         }
         directorioOrigen = directories[0]
@@ -339,6 +408,7 @@ object Resumen {
                 )
             )
         }
+        logger.debug { "Fichero html generado correctamente en: $fileHtml" }
 
         var fileCss = FileWriter("$CSS${File.separator}css.css")
         fileCss.write(html.generateCss())
@@ -378,6 +448,7 @@ object Resumen {
                 )
             )
         }
+        logger.debug { "Fichero html generado correctamente en: $fileHtml" }
 
         var fileCss = FileWriter("$CSS${File.separator}css.css")
         fileCss.write(html.generateCss())

@@ -4,9 +4,12 @@ import dto.ContenedorDTO
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import nl.adaptivity.xmlutil.serialization.XML
 import java.io.File
 import java.nio.charset.Charset
+
+private val looger = KotlinLogging.logger { }
 
 object ContenedorController {
 
@@ -69,7 +72,7 @@ object ContenedorController {
      */
     fun saveDataFromCsv(file: File, contenedores: List<ContenedorDTO>, directorioDestino: File) {
         val fileCSV = directorioDestino.absolutePath + File.separator + file.name
-        println("Ruta del nuevo fichero: $fileCSV")
+        looger.debug { "Ruta del nuevo fichero: $fileCSV" }
         File(fileCSV).bufferedWriter(Charset.forName("UTF-8")).use { out ->
             out.write("Código Interno del Situad;Tipo Contenedor;Modelo;Descripcion Modelo;Cantidad;Lote;Distrito;Barrio;Tipo Vía;Nombre;Número;COORDENADA X;COORDENADA Y;LONGITUD;LATITUD;DIRECCION")
             out.newLine()
@@ -78,7 +81,6 @@ object ContenedorController {
                 out.newLine()
             }
         }
-        println("Fichero creado")
     }
 
     /**
@@ -89,10 +91,9 @@ object ContenedorController {
      */
     fun saveDataFromJson(file: File, contenedores: List<ContenedorDTO>, directorioDestino: File) {
         val fileJson = directorioDestino.absolutePath + File.separator + file.name.replace(".csv", ".json")
-        println("Ruta del nuevo fichero: $fileJson")
+        looger.debug { "Ruta del nuevo fichero: $fileJson" }
         val json = Json { prettyPrint = true }
         File(fileJson).writeText(json.encodeToString(contenedores))
-        println("Fichero creado")
     }
 
     /**
@@ -103,9 +104,8 @@ object ContenedorController {
      */
     fun saveDataFromXml(file: File, contenedores: List<ContenedorDTO>, directorioDestino: File) {
         val fileXml = directorioDestino.absolutePath + File.separator + file.name.replace(".csv", ".xml")
-        println("Ruta del nuevo fichero: $fileXml")
+        looger.debug { "Ruta del nuevo fichero: $fileXml" }
         val xml = XML { indent = 4 }
         File(fileXml).writeText(xml.encodeToString(contenedores))
-        println("Fichero creado")
     }
 }

@@ -1,7 +1,12 @@
 import controller.Resumen
+import exceptions.FicherosException
 import models.Bitacora
+import mu.KotlinLogging
+import java.io.FileNotFoundException
 import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Función main principal
@@ -20,65 +25,75 @@ fun main(args: Array<String>) {
  */
 fun init(args: Array<String>) {
     var isSucces = true
-
+    logger.debug { "Comprobando parámetros de entrada..." }
     if (args.isNotEmpty()) {
 
         try {
+            logger.debug { "Comprobando si los directorios existen..." }
             Resumen.getDirectories(args)
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
+        } catch (e: FileNotFoundException) {
+            logger.error { "Error: ${e.message}" }
             exitProcess(0)
         }
 
         if (args[0].equals("parser") && args.size >= 3) {
+            logger.debug { "Opción seleccionada: parser" }
 
             var tiempo = measureTimeMillis {
-
                 try {
                     Resumen.parser()
-
-                } catch (e: Exception) {
-                    println("Error parser: ${e.message}")
+                } catch (e: FicherosException) {
+                    logger.error { "Error: ${e.message}" }
                     isSucces = false
                 }
             }
+            logger.debug { "Generando bitácora..." }
             var bitacora = Bitacora("parser", isSucces, tiempo)
             bitacora.bitacoraXml(args.last())
+            logger.debug { "Bitácora almacenada perfectamente" }
 
         } else if (args[0].equals("resumen") && args.size >= 3) {
 
             var tiempo = System.currentTimeMillis()
+            logger.debug { "Creando directorios de imágenes y css en el directorio destino..." }
             Resumen.createDirectoryImagesAndCSS()
 
             if (getDistrito(args) != "") {
+                logger.debug { "Opción seleccionada: resumen distrito" }
                 try {
+                    logger.debug { "Obteniendo el distrito indicado..." }
                     var distrito = getDistrito(args)
                     Resumen.resumenDistrito(distrito)
                 } catch (e: Exception) {
-                    println(e.message)
+                    logger.error { "Error: ${e.message}" }
                     isSucces = false
                 }
+                logger.debug { "Generando bitácora..." }
                 var bitacora = Bitacora("resumen distrito", isSucces, System.currentTimeMillis() - tiempo)
                 bitacora.bitacoraXml(args.last())
+                logger.debug { "Bitácora almacenada perfectamente" }
 
             } else {
+                logger.debug { "Opción seleccionada: resumen" }
                 try {
                     Resumen.resumen()
-                } catch (e: Exception) {
-                    println(e.message)
+                } catch (e: FileNotFoundException) {
+                    logger.error { "Error: ${e.message}" }
                     isSucces = false
                 }
+                logger.debug { "Generando bitácora..." }
                 var bitacora = Bitacora("resumen", isSucces, System.currentTimeMillis() - tiempo)
                 bitacora.bitacoraXml(args.last())
+                logger.debug { "Bitácora almacenada perfectamente" }
             }
 
         } else {
-            println("Error: Opción de parámetro incorrecta")
+            logger.error { "Error: Opción de parámetro incorrecta" }
             exitProcess(0)
         }
 
     } else {
-        println("Error: Los argumentos son erróneos.")
+        logger.error { "Error: Los argumentos son erróneos." }
         exitProcess(0)
     }
 }

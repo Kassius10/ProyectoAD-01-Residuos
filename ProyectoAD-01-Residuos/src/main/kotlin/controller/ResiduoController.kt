@@ -4,9 +4,12 @@ import dto.ResiduoDTO
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import nl.adaptivity.xmlutil.serialization.XML
 import java.io.File
 import java.nio.charset.Charset
+
+private val looger = KotlinLogging.logger { }
 
 /**
  * Clase encargada del control de ficheros de residuos.
@@ -62,7 +65,7 @@ object ResiduoController {
      */
     fun saveDataFromCsv(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
         val fileCSV = directorioDestino.absolutePath + File.separator + file.name
-        println("Ruta del nuevo fichero: $fileCSV")
+        looger.debug { "Ruta del nuevo fichero: $fileCSV" }
         File(fileCSV).bufferedWriter(Charset.forName("UTF-8")).use { out ->
             out.write("Año;Mes;Lote;Residuo;Distrito;Nombre Distrito;Toneladas")
             out.newLine()
@@ -71,7 +74,6 @@ object ResiduoController {
                 out.newLine()
             }
         }
-        println("Fichero creado")
     }
 
 
@@ -83,10 +85,9 @@ object ResiduoController {
      */
     fun saveDataFromJson(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
         val fileJson = directorioDestino.absolutePath + File.separator + file.name.replace(".csv", ".json")
-        println("Ruta del nuevo fichero: $fileJson")
+        looger.debug { "Ruta del nuevo fichero: $fileJson" }
         val json = Json { prettyPrint = true }
         File(fileJson).writeText(json.encodeToString(residuos))
-        println("Fichero creado")
     }
 
     /**
@@ -97,10 +98,9 @@ object ResiduoController {
      */
     fun saveDataFromXml(file: File, residuos: List<ResiduoDTO>, directorioDestino: File) {
         val fileXml = directorioDestino.absolutePath + File.separator + file.name.replace(".csv", ".xml")
-        println("Ruta del nuevo fichero: $fileXml")
+        looger.debug { "Ruta del nuevo fichero: $fileXml" }
         val xml = XML { indent = 4 }
         File(fileXml).writeText(xml.encodeToString(residuos))
-        println("Fichero creado")
     }
 
 }

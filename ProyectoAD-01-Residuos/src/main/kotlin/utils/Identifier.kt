@@ -3,6 +3,7 @@ package utils
 import controller.ContenedorController
 import controller.ResiduoController
 import controller.Resumen
+import exceptions.FicherosException
 import java.io.File
 
 object Identifier {
@@ -25,7 +26,7 @@ object Identifier {
                 var list = ContenedorController.loadDataFromCsv(file)
                 Resumen.contenedores = list
             }
-            else -> throw IllegalArgumentException("El csv es incorrecto: $head")
+            else -> throw FicherosException("El csv es incorrecto: $head")
         }
     }
 
@@ -44,7 +45,7 @@ object Identifier {
                 var list = ContenedorController.loadDataFromJson(file)
                 Resumen.contenedores = list
             }
-            else -> throw IllegalArgumentException("El json es incorrecto.")
+            else -> throw FicherosException("El json es incorrecto.")
         }
     }
 
@@ -63,7 +64,7 @@ object Identifier {
                 var list = ContenedorController.loadDataFromXml(file)
                 Resumen.contenedores = list
             }
-            else -> throw IllegalArgumentException("El xml es incorrecto.")
+            else -> throw FicherosException("El xml es incorrecto.")
         }
     }
 
@@ -117,7 +118,7 @@ object Identifier {
         when {
             head.equals(headResiduo) -> return "residuo"
             head.equals(headContenedor) -> return "contenedor"
-            else -> return throw IllegalArgumentException("El csv es incorrecto: $head")
+            else -> return throw FicherosException("El csv es incorrecto: $head")
         }
     }
 
