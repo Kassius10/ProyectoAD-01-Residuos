@@ -17,14 +17,15 @@ import utils.Identifier
 import utils.replaceAcents
 import java.io.File
 import java.io.FileWriter
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
 
 object Resumen {
     private var directorioOrigen: String = ""
     private var directorioDestino: String = ""
-    private val RESOURCES =
-        "${System.getProperty("user.dir")}${File.separator}src${File.separator}main${File.separator}resources"
+    private val RESOURCES = File("").absolutePath.replaceAfter("ProyectoAD-01-Residuos", "") +
+            File.separator + "src" + File.separator + "main" + File.separator + "resources"
     private lateinit var IMAGES: String
     private lateinit var CSS: String
 
@@ -58,7 +59,7 @@ object Resumen {
                         }
                     }
                 } catch (e: Exception) {
-                    println("Error: " + e.message)
+                    throw IllegalStateException(e.message)
                 }
             }
         } else throw IllegalStateException("El directorio no contiene ficheros csv.")
@@ -70,6 +71,7 @@ object Resumen {
      * Método para consultar los datos correspondientes.
      */
     fun resumen() {
+        val tiempoGeneracion = System.currentTimeMillis()
         Identifier.findExtension(directorioOrigen)
 
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
@@ -147,6 +149,7 @@ object Resumen {
             println(porDistritoCantidadRecogida)
 
             generarHtmlResumen(
+                tiempoGeneracion,
                 numeroContenedores.html(),
                 mediaDeContenedoresPorDistrito.html(),
                 mediaToneladasAnualesPorDistrito.html(),
@@ -165,10 +168,11 @@ object Resumen {
      * @param distrito Distrito necesario para realizar las consultas sobre él
      */
     fun resumenDistrito(dis: String) {
+        val tiempoGeneracion = System.currentTimeMillis()
         Identifier.findExtension(directorioOrigen)
 
         if (!residuos.isEmpty() && !contenedores.isEmpty()) {
-            var distrito = replaceAcents(dis)
+            var distrito = replaceAcents(dis).uppercase()
             val dataFrameResiduos =
                 residuos.toDataFrame().update { it["distrito"] }.with { replaceAcents(it.toString().uppercase()) }
             dataFrameResiduos.cast<ResiduoDTO>()
@@ -248,6 +252,7 @@ object Resumen {
                 ggsave(fig, "estadisticasResiduosPorMes$distrito.png", path = IMAGES)
 
                 generarHtmlResumenDistrito(
+                    tiempoGeneracion,
                     distrito,
                     tipoContenedoresDistrito.html(),
                     totalToneladasPorResiduoDistrito.html(),
@@ -295,6 +300,7 @@ object Resumen {
     fun createDirectoryImagesAndCSS() {
         var imagen = "$RESOURCES${File.separator}img${File.separator}logo.jpg"
         IMAGES = "$directorioDestino${File.separator}img${File.separator}"
+
         if (Files.notExists(Paths.get(IMAGES))) {
             Files.createDirectory(Paths.get(IMAGES))
         }
@@ -302,6 +308,7 @@ object Resumen {
         if (Files.notExists(Paths.get(CSS))) {
             Files.createDirectory(Paths.get(CSS))
         }
+
         File(imagen).copyTo(File("$IMAGES${File.separator}logo.jpg"), true)
     }
 
@@ -313,22 +320,25 @@ object Resumen {
      * @param estadisticaPorMesResiduoDistrito Tercera consulta
      */
     private fun generarHtmlResumenDistrito(
+        tiempoGeneracion: Long,
         distrito: String,
         tipoContenedoresDistrito: String,
         totalToneladasPorResiduoDistrito: String,
         estadisticaPorMesResiduoDistrito: String,
     ) {
         var html = Html()
-        var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistrito.html")
-        fileHtml.write(
-            html.generateResumenDistritoHtml(
-                distrito,
-                tipoContenedoresDistrito,
-                totalToneladasPorResiduoDistrito,
-                estadisticaPorMesResiduoDistrito
+        var fileHtml = File("$directorioDestino${File.separator}resumenDistrito.html")
+        fileHtml.bufferedWriter(Charset.forName("UTF-8")).use {
+            it.write(
+                html.generateResumenDistritoHtml(
+                    tiempoGeneracion,
+                    distrito,
+                    tipoContenedoresDistrito,
+                    totalToneladasPorResiduoDistrito,
+                    estadisticaPorMesResiduoDistrito
+                )
             )
-        )
-        fileHtml.close()
+        }
 
         var fileCss = FileWriter("$CSS${File.separator}css.css")
         fileCss.write(html.generateCss())
@@ -345,6 +355,7 @@ object Resumen {
      * @param porDistritoCantidadRecogida Sexta consulta
      */
     private fun generarHtmlResumen(
+        tiempoGeneracion: Long,
         numeroContenedoresTipo: String,
         mediaContenedoresTipo: String,
         mediaToneladasAnuales: String,
@@ -353,18 +364,20 @@ object Resumen {
         porDistritoCantidadRecogida: String,
     ) {
         var html = Html()
-        var fileHtml = FileWriter("$directorioDestino${File.separator}resumenDistritos.html")
-        fileHtml.write(
-            html.generateResumenHtml(
-                numeroContenedoresTipo,
-                mediaContenedoresTipo,
-                mediaToneladasAnuales,
-                maxMinMediaToneladasAnuales,
-                sumaRecogidosPorDistrito,
-                porDistritoCantidadRecogida
+        var fileHtml = File("$directorioDestino${File.separator}resumenDistritos.html")
+        fileHtml.bufferedWriter(Charset.forName("UTF-8")).use {
+            it.write(
+                html.generateResumenHtml(
+                    tiempoGeneracion,
+                    numeroContenedoresTipo,
+                    mediaContenedoresTipo,
+                    mediaToneladasAnuales,
+                    maxMinMediaToneladasAnuales,
+                    sumaRecogidosPorDistrito,
+                    porDistritoCantidadRecogida
+                )
             )
-        )
-        fileHtml.close()
+        }
 
         var fileCss = FileWriter("$CSS${File.separator}css.css")
         fileCss.write(html.generateCss())

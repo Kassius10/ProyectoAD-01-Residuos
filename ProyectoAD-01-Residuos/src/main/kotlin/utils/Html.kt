@@ -6,7 +6,9 @@ import java.time.LocalDateTime
 class Html(
     private val fechaGeneracion: String = LocalDateTime.now().formatToString(),
 ) {
+
     fun generateResumenHtml(
+        tiempoGeneracion: Long,
         numeroContenedoresTipo: String,
         mediaContenedoresTipo: String,
         mediaToneladasAnuales: String,
@@ -84,6 +86,7 @@ class Html(
                 </div>
                 <br id="clear"></br>
             </div>
+            <p>Tiempo de generación del archivo: ${System.currentTimeMillis() - tiempoGeneracion}ms</p>
             </body>
             </html>
             """.trimIndent()
@@ -94,6 +97,7 @@ class Html(
      * @return Devuelve una cadena con el contenido del html.
      */
     fun generateResumenDistritoHtml(
+        tiempoGeneracion: Long,
         distrito: String,
         tipoContenedoresDistrito: String,
         totalToneladasPorResiduoDistrito: String,
@@ -151,8 +155,7 @@ class Html(
                   </div>
                   <br>
                </div>
-                       
-               
+               <p>Tiempo de generación del archivo: ${System.currentTimeMillis() - tiempoGeneracion}ms</p>
             </body>
             </html>
         """.trimIndent()
