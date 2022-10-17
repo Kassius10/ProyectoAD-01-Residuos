@@ -11,6 +11,7 @@ import jetbrains.letsPlot.intern.Plot
 import jetbrains.letsPlot.label.ggtitle
 import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
+import jetbrains.letsPlot.scale.scaleFillManual
 import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
 import org.jetbrains.kotlinx.dataframe.io.html
@@ -315,6 +316,7 @@ object Resumen {
                     y = "Estadística",
                     title = "Estadística de residuos por mes en $distrito"
                 )
+
                 ggsave(fig, "estadisticasResiduosPorMes$distrito.png", path = IMAGES)
                 logger.debug { "Generando gráfica en $IMAGES" }
                 logger.debug { "Datos consultados exitosamente." }

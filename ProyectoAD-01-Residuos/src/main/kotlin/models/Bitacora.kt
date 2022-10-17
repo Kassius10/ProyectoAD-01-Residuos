@@ -1,5 +1,6 @@
 package models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
@@ -7,12 +8,15 @@ import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import utils.formatToISO8601
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
 @Serializable
+@SerialName("Ejecución")
 data class Bitacora(
     @XmlElement(true)
     val opcionRecibida: String,
@@ -32,9 +36,21 @@ data class Bitacora(
      * @param path Ruta donde queremos almacenar el fichero bitácora.
      */
     fun bitacoraXml(path: String) {
+        var file = "$path${File.separator}bitacora.xml"
+        var lista = mutableListOf<Bitacora>()
+        lista.add(this)
+
         val xml = XML { indentString = "  " }
-        val bitacora = File(path + File.separator + "bitacoraCompleta$id.xml")
-        logger.debug { "Ruta del nuevo fichero bitácora: $bitacora" }
-        bitacora.writeText(xml.encodeToString(this))
+
+        if (Files.notExists(Paths.get(file))) {
+            File(file).writeText(xml.encodeToString(lista))
+        } else {
+            var bitacoras = XML.decodeFromString<List<Bitacora>>(File(file).readText()).toMutableList()
+            bitacoras.add(this)
+            File(file).writeText(xml.encodeToString(bitacoras))
+        }
+        logger.debug { "Ruta del fichero bitácora: $file" }
+
     }
+
 }
