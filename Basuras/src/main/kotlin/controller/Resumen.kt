@@ -11,7 +11,6 @@ import jetbrains.letsPlot.intern.Plot
 import jetbrains.letsPlot.label.ggtitle
 import jetbrains.letsPlot.label.labs
 import jetbrains.letsPlot.scale.scaleFillGradient
-import jetbrains.letsPlot.scale.scaleFillManual
 import mu.KotlinLogging
 import org.jetbrains.kotlinx.dataframe.api.*
 import org.jetbrains.kotlinx.dataframe.io.html
@@ -31,7 +30,7 @@ private val logger = KotlinLogging.logger {}
 object Resumen {
     private var directorioOrigen: String = ""
     private var directorioDestino: String = ""
-    private val RESOURCES = File("").absolutePath.replaceAfter("ProyectoAD-01-Residuos", "") +
+    private val RESOURCES = File("").absolutePath.replaceAfter("Basuras", "") +
             File.separator + "src" + File.separator + "main" + File.separator + "resources"
     private lateinit var IMAGES: String
     private lateinit var CSS: String
