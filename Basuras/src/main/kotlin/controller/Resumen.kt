@@ -23,7 +23,7 @@ import java.io.FileWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.concurrent.*
+import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
 
@@ -44,7 +44,6 @@ object Resumen {
     fun parser() {
         logger.debug { "Buscando ficheros csv en el directorio origen..." }
         var files = findCSV()
-
 
         if (files.isNotEmpty()) {
             logger.debug { "Ficheros encontrados exitosamente" }
@@ -220,7 +219,7 @@ object Resumen {
 
     /**
      * Método de resumen por distrito
-     * @param distrito Distrito necesario para realizar las consultas sobre él
+     * @param dis Distrito necesario para realizar las consultas sobre él
      */
     fun resumenDistrito(dis: String) {
         val tiempoGeneracion = System.currentTimeMillis()
@@ -343,7 +342,7 @@ object Resumen {
      * Método para comprobar si los directorios existen y almacenarlos después.
      * @param args Parámetros indicados por consola
      */
-    fun getDirectories(args: Array<String>) {
+    fun getDirectories(args: Array<String>): Boolean {
         var directories = args.takeLast(2)
 
         for (dir in directories) {
@@ -353,7 +352,7 @@ object Resumen {
         }
         directorioOrigen = directories[0]
         directorioDestino = directories[1]
-
+        return true
     }
 
     /**
