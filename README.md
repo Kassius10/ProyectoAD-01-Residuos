@@ -30,4 +30,4 @@ Clase principal donde nuestro programa se construye de forma progresiva y gestio
 
 
 ### Enlace a video de youtube sobre el proyecto.
-![YouTube](https://www.youtube.com/watch?v=HkzBYBKfmmg)
+https://www.youtube.com/watch?v=HkzBYBKfmmg
