@@ -16,11 +16,15 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation("org.jetbrains.kotlinx:dataframe:0.8.1")
+
     implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
     implementation("ch.qos.logback:logback-classic:1.3.0-alpha16")
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+
     implementation("io.github.pdvrieze.xmlutil:core-jvm:0.84.3")
     implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.84.3")
+
     implementation("org.jetbrains.lets-plot:lets-plot-kotlin:3.2.0")
     implementation("org.jetbrains.lets-plot:lets-plot-image-export:2.3.0")
 }

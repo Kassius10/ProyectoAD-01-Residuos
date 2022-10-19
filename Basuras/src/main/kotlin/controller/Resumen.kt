@@ -277,7 +277,9 @@ object Resumen {
                 val estadisticaPorMesResiduoDistrito = existeResiduo.groupBy("month", "distrito")
                     .aggregate {
                         max("toneladas") into "Max"
+                        maxBy("toneladas")["tipoResiduo"] into "TipoResiduoMax"
                         min("toneladas") into "Min"
+                        minBy("toneladas")["tipoResiduo"] into "TipoResiduoMin"
                         mean("toneladas").toFloat() into "Media"
                         std("toneladas") into "Desviación"
                     }
@@ -314,7 +316,7 @@ object Resumen {
                     y = "Estadística",
                     title = "Estadística de residuos por mes en $distrito"
                 )
-
+                
                 ggsave(fig, "estadisticasResiduosPorMes$distrito.png", path = IMAGES)
                 logger.debug { "Generando gráfica en $IMAGES" }
                 logger.debug { "Datos consultados exitosamente." }
