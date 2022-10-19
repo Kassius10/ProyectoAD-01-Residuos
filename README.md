@@ -27,3 +27,7 @@ Paquete que contiene clases de utilidad las cuales nos permiten hacer distintas 
 
 ## Main(Clase Principal)
 Clase principal donde nuestro programa se construye de forma progresiva y gestiona los mecanismos de entrada a nuestro programa los cuales son: parser, resumen y resumen por x Distrito. 
+
+
+### Enlace a video de youtube sobre el proyecto.
+![YouTube](https://www.youtube.com/watch?v=HkzBYBKfmmg)
