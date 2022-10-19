@@ -4,7 +4,10 @@ import controller.ContenedorController
 import controller.ResiduoController
 import controller.Resumen
 import exceptions.FicherosException
+import mu.KotlinLogging
 import java.io.File
+
+private val logger = KotlinLogging.logger {}
 
 object Identifier {
     private val headResiduo = "Año;Mes;Lote;Residuo;Distrito;Nombre Distrito;Toneladas"
@@ -128,12 +131,17 @@ object Identifier {
      */
     fun findExtension(directorioOrigen: String) {
         var files = File(directorioOrigen).listFiles()?.toList()
-        files?.forEach {
-            when {
-                it.name.contains(".csv") -> isCSV(it)
-                it.name.contains(".xml") -> isXML(it)
-                it.name.contains(".json") -> isJSON(it)
+        try {
+            files?.forEach {
+                when {
+                    it.name.contains(".csv") -> isCSV(it)
+                    it.name.contains(".xml") -> isXML(it)
+                    it.name.contains(".json") -> isJSON(it)
+                }
             }
+        } catch (e: FicherosException) {
+            logger.error { "Error: el fichero es incorrecto." }
         }
+
     }
 }
